@@ -1,0 +1,10 @@
+bin/
+*.env
+.env
+out/
+target/
+.idea/
+.classpath
+.project
+.settings/
+.DS_Store

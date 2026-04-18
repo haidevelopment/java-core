@@ -4,18 +4,29 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 public class DatabaseConnection {
-    private static final String URL = "jdbc:oracle:thin:@//localhost:1521/ORCL";
-    private static final String USER = "system"; 
-    private static final String PASSWORD = "oracle";     
+    private static final String DEFAULT_URL = "jdbc:oracle:thin:@//localhost:1521/ORCL";
+    private static final String DEFAULT_SID_URL = "jdbc:oracle:thin:@localhost:1521:ORCL";
+    private static final String DEFAULT_USER = "system";
+    private static final String DEFAULT_PASSWORD = "oracle";
 
     public static Connection getConnection() {
+        loadDotEnvIfPresent();
+
         Connection connection = null;
         try {
             Class.forName("oracle.jdbc.OracleDriver");
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            String url = getSetting("DB_URL", DEFAULT_URL);
+            String user = getSetting("DB_USER", DEFAULT_USER);
+            String password = getSetting("DB_PASSWORD", DEFAULT_PASSWORD);
+
+            connection = DriverManager.getConnection(url, user, password);
             if (connection != null) {
                 System.out.println("ĐÃ KẾT NỐI ORACLE THÀNH CÔNG!");
             }
@@ -24,14 +35,67 @@ public class DatabaseConnection {
         } catch (SQLException e) {
             System.err.println("LỖI KẾT NỐI DATABASE: " + e.getMessage());
             try {
-                String sidUrl = "jdbc:oracle:thin:@localhost:1521:ORCL";
-                connection = DriverManager.getConnection(sidUrl, USER, PASSWORD);
+                String sidUrl = getSetting("DB_SID_URL", DEFAULT_SID_URL);
+                String user = getSetting("DB_USER", DEFAULT_USER);
+                String password = getSetting("DB_PASSWORD", DEFAULT_PASSWORD);
+                connection = DriverManager.getConnection(sidUrl, user, password);
                 if (connection != null) System.out.println("ĐÃ KẾT NỐI ORACLE THÀNH CÔNG!");
             } catch (SQLException e2) {
                 System.err.println("KẾT NỐI THẤT BẠI");
             }
         }
         return connection;
+    }
+
+    private static String getSetting(String key, String defaultValue) {
+        String value = System.getProperty(key);
+        if (value == null || value.isBlank()) {
+            value = System.getenv(key);
+        }
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private static void loadDotEnvIfPresent() {
+        if (System.getProperty("DB_URL") != null
+                || System.getProperty("DB_USER") != null
+                || System.getProperty("DB_PASSWORD") != null
+                || System.getProperty("DB_SID_URL") != null) {
+            return;
+        }
+
+        Path envPath = Path.of(".env");
+        if (!Files.exists(envPath)) {
+            return;
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(envPath, StandardCharsets.UTF_8);
+            for (String rawLine : lines) {
+                if (rawLine == null) continue;
+                String line = rawLine.trim();
+                if (line.isEmpty()) continue;
+                if (line.startsWith("#")) continue;
+
+                int idx = line.indexOf('=');
+                if (idx <= 0) continue;
+
+                String key = line.substring(0, idx).trim();
+                String value = line.substring(idx + 1).trim();
+
+                if ((value.startsWith("\"") && value.endsWith("\""))
+                        || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length() - 1);
+                }
+
+                if (!key.isEmpty() && System.getProperty(key) == null) {
+                    System.setProperty(key, value);
+                }
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     public static void initDatabase() {
