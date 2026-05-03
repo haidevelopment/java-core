@@ -15,8 +15,9 @@ public class MainFrame extends JFrame {
     private BookingRepository bookingRepo;
     private JButton btnLogout;
     private JButton btnDashboard, btnTrips, btnTickets, btnUsers;
-    private java.util.List<JButton> menuButtons = new java.util.ArrayList<>(); 
-    private JPanel cardPanel; 
+    private java.util.List<JButton> menuButtons = new java.util.ArrayList<>();
+    private boolean isAdmin;
+    private JPanel cardPanel;
     private CardLayout cardLayout;
 
     private final Color sidebarColor = new Color(44, 62, 80);
@@ -27,12 +28,17 @@ public class MainFrame extends JFrame {
     public MainFrame(User user) {
         this.currentUser = user;
         this.bookingRepo = new BookingRepository();
-        
-        setTitle("Booking Pro - Admin Dashboard");
+        this.isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getRole());
+
+        if (this.isAdmin) {
+            setTitle("Booking Pro - Admin Dashboard");
+        } else {
+            setTitle("Booking Pro - Staff Dashboard");
+        }
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1100, 750);
         setLocationRelativeTo(null);
-        
+
         initComponents();
     }
 
@@ -40,10 +46,21 @@ public class MainFrame extends JFrame {
         return btnLogout;
     }
 
-    public JButton getTripsButton() { return btnTrips; }
-    public JButton getDashboardButton() { return btnDashboard; }
-    public JButton getTicketsButton() { return btnTickets; }
-    public JButton getUsersButton() { return btnUsers; }
+    public JButton getTripsButton() {
+        return btnTrips;
+    }
+
+    public JButton getDashboardButton() {
+        return btnDashboard;
+    }
+
+    public JButton getTicketsButton() {
+        return btnTickets;
+    }
+
+    public JButton getUsersButton() {
+        return btnUsers;
+    }
 
     public void showPanel(String name, JButton activeBtn) {
         cardLayout.show(cardPanel, name);
@@ -65,11 +82,11 @@ public class MainFrame extends JFrame {
     private void initComponents() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(createSidebar(), BorderLayout.WEST);
-        
+
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(backgroundColor);
         contentPanel.add(createHeader(), BorderLayout.NORTH);
-        
+
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
         cardPanel.setOpaque(false);
@@ -81,13 +98,13 @@ public class MainFrame extends JFrame {
         dashboardArea.add(createStatsPanel());
         dashboardArea.add(Box.createRigidArea(new Dimension(0, 25)));
         dashboardArea.add(createTablePanel());
-        
+
         JScrollPane scrollDashboard = new JScrollPane(dashboardArea);
         scrollDashboard.setBorder(BorderFactory.createEmptyBorder());
-        
-        TripManagementPanel tripPanel = new TripManagementPanel();
 
-        BookingManagementPanel bookingPanel = new BookingManagementPanel();
+        TripManagementPanel tripPanel = new TripManagementPanel(this.isAdmin);
+
+        BookingManagementPanel bookingPanel = new BookingManagementPanel(this.isAdmin);
 
         UserManagementPanel userPanel = new UserManagementPanel();
 
@@ -105,7 +122,7 @@ public class MainFrame extends JFrame {
         JPanel sidebar = new JPanel();
         sidebar.setPreferredSize(new Dimension(250, 0));
         sidebar.setBackground(sidebarColor);
-        sidebar.setLayout(null); 
+        sidebar.setLayout(null);
 
         JLabel lblLogo = new JLabel("BOOKING PRO", SwingConstants.CENTER);
         lblLogo.setForeground(Color.WHITE);
@@ -116,12 +133,20 @@ public class MainFrame extends JFrame {
         btnDashboard = createMenuButton("      Dashboard", 130);
         btnTrips = createMenuButton("      Trips", 185);
         btnTickets = createMenuButton("      Tickets", 240);
-        btnUsers = createMenuButton("      Users", 295);
 
         menuButtons.add(btnDashboard);
         menuButtons.add(btnTrips);
         menuButtons.add(btnTickets);
-        menuButtons.add(btnUsers);
+
+        int nextY = 295;
+
+        if (this.isAdmin) {
+            btnUsers = createMenuButton("      Users", nextY);
+            menuButtons.add(btnUsers);
+            nextY += 55;
+        } else {
+            btnUsers = new JButton();
+        }
 
         btnDashboard.setBackground(activeMenuColor);
         btnDashboard.setForeground(Color.WHITE);
@@ -130,12 +155,12 @@ public class MainFrame extends JFrame {
             sidebar.add(btn);
         }
 
-        sidebar.add(createMenuButton("      Reports", 350));
-        sidebar.add(createMenuButton("      Settings", 405));
+        sidebar.add(createMenuButton("      Reports", nextY));
+        nextY += 55;
+        sidebar.add(createMenuButton("      Settings", nextY));
 
         return sidebar;
     }
-
 
     private JButton createMenuButton(String text, int y) {
         JButton btn = new JButton(text);
@@ -152,7 +177,6 @@ public class MainFrame extends JFrame {
         return btn;
     }
 
-
     private JPanel createHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Color.WHITE);
@@ -162,23 +186,23 @@ public class MainFrame extends JFrame {
         JLabel lblTitle = new JLabel("Overview Dashboard");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setBorder(new EmptyBorder(0, 30, 0, 0));
-        
+
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 25, 22));
         userPanel.setBackground(Color.WHITE);
-        
+
         JLabel lblUser = new JLabel("Hello, " + currentUser.getFullName());
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        
+
         btnLogout = new JButton("Logout") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                g2.setColor(new Color(231, 76, 60)); 
+
+                g2.setColor(new Color(231, 76, 60));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
                 g2.dispose();
-                
+
                 super.paintComponent(g);
             }
         };
@@ -324,5 +348,3 @@ public class MainFrame extends JFrame {
         return container;
     }
 }
-
-
