@@ -13,8 +13,10 @@ public class BookingManagementPanel extends JPanel {
     private BookingRepository bookingRepo;
     private JTable table;
     private DefaultTableModel tableModel;
+    private boolean isAdmin;
 
-    public BookingManagementPanel() {
+    public BookingManagementPanel(boolean isAdmin) {
+        this.isAdmin = isAdmin;
         this.bookingRepo = new BookingRepository();
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
@@ -41,7 +43,7 @@ public class BookingManagementPanel extends JPanel {
         JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219));
         JButton btnDelete = createStyledButton("Cancel Ticket", new Color(231, 76, 60));
         
-        btnPanel.add(btnDelete);
+            btnPanel.add(btnDelete);
         btnPanel.add(btnAdd);
         btnPanel.add(btnRefresh);
         

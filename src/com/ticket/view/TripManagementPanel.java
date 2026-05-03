@@ -16,8 +16,10 @@ public class TripManagementPanel extends JPanel {
     private TripRepository tripRepo;
     private JTable table;
     private DefaultTableModel tableModel;
+    private boolean isAdmin;
 
-    public TripManagementPanel() {
+    public TripManagementPanel(boolean isAdmin) {
+        this.isAdmin = isAdmin;
         this.tripRepo = new TripRepository();
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
@@ -43,8 +45,10 @@ public class TripManagementPanel extends JPanel {
         JButton btnAdd = createStyledButton("Add New Trip", new Color(46, 204, 113));
         JButton btnDelete = createStyledButton("Delete Selected", new Color(231, 76, 60));
         
-        btnPanel.add(btnDelete);
-        btnPanel.add(btnAdd);
+        if (isAdmin) {
+            btnPanel.add(btnDelete);
+            btnPanel.add(btnAdd);
+        }
         btnPanel.add(btnRefresh);
         
         headerPanel.add(lblTitle, BorderLayout.WEST);
@@ -111,6 +115,11 @@ public class TripManagementPanel extends JPanel {
     }
 
     private void editSelectedTrip() {
+        if (!this.isAdmin) {
+            JOptionPane.showMessageDialog(this, "Bạn không có quyền chỉnh sửa thông tin chuyến đi (Only Admin).", "Access Denied", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         int row = table.getSelectedRow();
         if (row == -1)
             return;
