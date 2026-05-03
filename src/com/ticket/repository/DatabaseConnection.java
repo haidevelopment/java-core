@@ -39,7 +39,8 @@ public class DatabaseConnection {
                 String user = getSetting("DB_USER", DEFAULT_USER);
                 String password = getSetting("DB_PASSWORD", DEFAULT_PASSWORD);
                 connection = DriverManager.getConnection(sidUrl, user, password);
-                if (connection != null) System.out.println("ĐÃ KẾT NỐI ORACLE THÀNH CÔNG!");
+                if (connection != null)
+                    System.out.println("ĐÃ KẾT NỐI ORACLE THÀNH CÔNG!");
             } catch (SQLException e2) {
                 System.err.println("KẾT NỐI THẤT BẠI");
             }
@@ -74,13 +75,17 @@ public class DatabaseConnection {
         try {
             List<String> lines = Files.readAllLines(envPath, StandardCharsets.UTF_8);
             for (String rawLine : lines) {
-                if (rawLine == null) continue;
+                if (rawLine == null)
+                    continue;
                 String line = rawLine.trim();
-                if (line.isEmpty()) continue;
-                if (line.startsWith("#")) continue;
+                if (line.isEmpty())
+                    continue;
+                if (line.startsWith("#"))
+                    continue;
 
                 int idx = line.indexOf('=');
-                if (idx <= 0) continue;
+                if (idx <= 0)
+                    continue;
 
                 String key = line.substring(0, idx).trim();
                 String value = line.substring(idx + 1).trim();
@@ -137,12 +142,16 @@ public class DatabaseConnection {
                     "PAYMENT_METHOD VARCHAR2(20))";
             executeCreateTable(stmt, "BOOKINGS", bookingsSQL);
 
-            seedData(stmt);
+            // seedData(stmt);
 
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException e) {}
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+            }
         }
     }
 
@@ -162,34 +171,46 @@ public class DatabaseConnection {
     private static void seedData(Statement stmt) throws SQLException {
         // 1. Chèn admin mặc định
         try {
-            stmt.execute("INSERT INTO USERS (USERNAME, PASSWORD, FULL_NAME, ROLE) VALUES ('admin', 'admin123', 'Administrator', 'ADMIN')");
+            stmt.execute(
+                    "INSERT INTO USERS (USERNAME, PASSWORD, FULL_NAME, ROLE) VALUES ('admin', 'admin123', 'Administrator', 'ADMIN')");
             System.out.println(">>> Đã tạo tài khoản admin mặc định.");
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+              e.printStackTrace();
+        }
 
         // 2. Chèn chuyến đi mẫu
         try {
-            stmt.execute("INSERT INTO TRIPS (TRIP_NAME, START_LOCATION, END_LOCATION, BASE_PRICE, TOTAL_SEATS, AVAILABLE_SEATS) " +
-                        "VALUES ('Hanoi - Da Nang', 'Hanoi', 'Da Nang', 150.0, 40, 35)");
-            stmt.execute("INSERT INTO TRIPS (TRIP_NAME, START_LOCATION, END_LOCATION, BASE_PRICE, TOTAL_SEATS, AVAILABLE_SEATS) " +
-                        "VALUES ('Saigon - Nha Trang', 'Saigon', 'Nha Trang', 120.0, 30, 20)");
+            stmt.execute(
+                    "INSERT INTO TRIPS (TRIP_NAME, START_LOCATION, END_LOCATION, BASE_PRICE, TOTAL_SEATS, AVAILABLE_SEATS) "
+                            +
+                            "VALUES ('Hanoi - Da Nang', 'Hanoi', 'Da Nang', 150.0, 40, 35)");
+            stmt.execute(
+                    "INSERT INTO TRIPS (TRIP_NAME, START_LOCATION, END_LOCATION, BASE_PRICE, TOTAL_SEATS, AVAILABLE_SEATS) "
+                            +
+                            "VALUES ('Saigon - Nha Trang', 'Saigon', 'Nha Trang', 120.0, 30, 20)");
             System.out.println(">>> Đã chèn dữ liệu Trip mẫu.");
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+              e.printStackTrace();
+        }
 
         // 3. Chèn Booking mẫu (Liên kết User ID 1 và Trip ID 1)
         try {
-            stmt.execute("INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
-                        "VALUES ('BK-888', 1, 1, 150.0, 'CONFIRMED', 'CREDIT_CARD')");
-            stmt.execute("INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
-                        "VALUES ('BK-999', 1, 2, 120.0, 'PENDING', 'CASH')");
-            stmt.execute("INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
-                        "VALUES ('BK-000', 1, 1, 150.0, 'CANCELLED', 'E-WALLET')");
+            stmt.execute(
+                    "INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
+                            "VALUES ('BK-888', 1, 1, 150.0, 'CONFIRMED', 'CREDIT_CARD')");
+            stmt.execute(
+                    "INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
+                            "VALUES ('BK-999', 1, 2, 120.0, 'PENDING', 'CASH')");
+            stmt.execute(
+                    "INSERT INTO BOOKINGS (BOOKING_CODE, USER_ID, TRIP_ID, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
+                            "VALUES ('BK-000', 1, 1, 150.0, 'CANCELLED', 'E-WALLET')");
             System.out.println(">>> Đã chèn dữ liệu Booking mẫu.");
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+              e.printStackTrace();
+        }
     }
-
 
     public static void main(String[] args) {
         initDatabase();
     }
 }
-

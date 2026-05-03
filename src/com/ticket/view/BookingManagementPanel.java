@@ -15,8 +15,10 @@ public class BookingManagementPanel extends JPanel {
     private BookingRepository bookingRepo;
     private JTable table;
     private DefaultTableModel tableModel;
+    private boolean isAdmin;
 
-    public BookingManagementPanel() {
+    public BookingManagementPanel(boolean isAdmin) {
+        this.isAdmin = isAdmin;
         this.bookingRepo = new BookingRepository();
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
