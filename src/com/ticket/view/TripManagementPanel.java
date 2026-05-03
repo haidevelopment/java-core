@@ -28,7 +28,7 @@ public class TripManagementPanel extends JPanel {
     }
 
     private void initComponents() {
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        JPanel headerPanel = new JPanel(new BorderLayout(0, 10));
         headerPanel.setOpaque(false);
         headerPanel.setBorder(new EmptyBorder(0, 10, 25, 10));
 
@@ -36,19 +36,21 @@ public class TripManagementPanel extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
         lblTitle.setForeground(new Color(52, 73, 94));
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         btnPanel.setOpaque(false);
         
-        JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219)); // Nút màu xanh dương
+        JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219));
         JButton btnAdd = createStyledButton("Add New Trip", new Color(46, 204, 113));
         JButton btnDelete = createStyledButton("Delete Selected", new Color(231, 76, 60));
+        JButton btnDetail = createStyledButton("View Details", new Color(155, 89, 182));
         
         btnPanel.add(btnDelete);
+        btnPanel.add(btnDetail);
         btnPanel.add(btnAdd);
         btnPanel.add(btnRefresh);
         
-        headerPanel.add(lblTitle, BorderLayout.WEST);
-        headerPanel.add(btnPanel, BorderLayout.EAST);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(btnPanel, BorderLayout.SOUTH);
         add(headerPanel, BorderLayout.NORTH);
 
         btnRefresh.addActionListener(e -> loadData());
@@ -74,6 +76,7 @@ public class TripManagementPanel extends JPanel {
 
         btnAdd.addActionListener(e -> addNewTrip());
         btnDelete.addActionListener(e -> deleteSelectedTrip());
+        btnDetail.addActionListener(e -> viewDetail());
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -94,6 +97,21 @@ public class TripManagementPanel extends JPanel {
         tableContainer.add(scrollPane, BorderLayout.CENTER);
 
         add(tableContainer, BorderLayout.CENTER);
+    }
+
+    private void viewDetail() {
+        int row = table.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a trip to view details!");
+            return;
+        }
+        int id = (int) table.getValueAt(row, 0);
+        Trip selected = tripRepo.getAllTrips().stream()
+                .filter(t -> t.getId() == id).findFirst().orElse(null);
+        if (selected != null) {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            new TripDetailDialog((Frame) owner, selected).setVisible(true);
+        }
     }
 
     private void addNewTrip() {

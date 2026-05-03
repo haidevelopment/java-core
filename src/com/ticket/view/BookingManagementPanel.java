@@ -7,6 +7,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class BookingManagementPanel extends JPanel {
@@ -26,7 +28,7 @@ public class BookingManagementPanel extends JPanel {
 
     private void initComponents() {
         // 1. Header
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        JPanel headerPanel = new JPanel(new BorderLayout(0, 10));
         headerPanel.setOpaque(false);
         headerPanel.setBorder(new EmptyBorder(0, 10, 25, 10));
         
@@ -34,19 +36,23 @@ public class BookingManagementPanel extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
         lblTitle.setForeground(new Color(52, 73, 94));
         
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         btnPanel.setOpaque(false);
         
         JButton btnAdd = createStyledButton("Book New Ticket", new Color(46, 204, 113));
         JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219));
         JButton btnDelete = createStyledButton("Cancel Ticket", new Color(231, 76, 60));
+        JButton btnDetail = createStyledButton("View Details", new Color(155, 89, 182));
+        JButton btnExport = createStyledButton("Export CSV", new Color(39, 174, 96));
         
         btnPanel.add(btnDelete);
+        btnPanel.add(btnDetail);
+        btnPanel.add(btnExport);
         btnPanel.add(btnAdd);
         btnPanel.add(btnRefresh);
         
-        headerPanel.add(lblTitle, BorderLayout.WEST);
-        headerPanel.add(btnPanel, BorderLayout.EAST);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(btnPanel, BorderLayout.SOUTH);
         add(headerPanel, BorderLayout.NORTH);
 
         // 2. Table
@@ -68,6 +74,8 @@ public class BookingManagementPanel extends JPanel {
         btnAdd.addActionListener(e -> addNewBooking());
         btnRefresh.addActionListener(e -> loadData());
         btnDelete.addActionListener(e -> deleteTicket());
+        btnDetail.addActionListener(e -> viewDetail());
+        btnExport.addActionListener(e -> exportCsv());
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -104,8 +112,22 @@ public class BookingManagementPanel extends JPanel {
         }
     }
 
-    private void editBooking() {
+    private void viewDetail() {
         int row = table.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a ticket to view details!");
+            return;
+        }
+        String code = (String) table.getValueAt(row, 0);
+        Booking selected = bookingRepo.getRecentBookings().stream()
+                .filter(b -> b.getBookingCode().equals(code)).findFirst().orElse(null);
+        if (selected != null) {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            new BookingDetailDialog((Frame) owner, selected).setVisible(true);
+        }
+    }
+
+    private void editBooking() {        int row = table.getSelectedRow();
         if (row == -1) return;
 
         String code = (String) table.getValueAt(row, 0);
@@ -163,6 +185,39 @@ public class BookingManagementPanel extends JPanel {
         }
     }
 
+
+    private void exportCsv() {
+        List<Booking> bookings = bookingRepo.getRecentBookings();
+        if (bookings.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No data to export.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export Tickets to CSV");
+        chooser.setSelectedFile(new File("tickets_export.csv"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        File file = chooser.getSelectedFile();
+        try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            w.write("\uFEFF"); // BOM for Excel UTF-8
+            w.write("Booking Code,Customer Name,Trip,Booking Date,Status,Payment Method,Total Amount\n");
+            for (Booking b : bookings) {
+                w.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.2f\"\n",
+                    b.getBookingCode(),
+                    b.getCustomerName(),
+                    b.getTripName(),
+                    b.getBookingDate().toString().substring(0, 16),
+                    b.getStatus(),
+                    b.getPaymentMethod() != null ? b.getPaymentMethod() : "N/A",
+                    b.getTotalAmount()
+                ));
+            }
+            JOptionPane.showMessageDialog(this, "Exported " + bookings.size() + " record(s).\n" + file.getAbsolutePath());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private JButton createStyledButton(String text, Color color) {
         JButton btn = new JButton(text) {
