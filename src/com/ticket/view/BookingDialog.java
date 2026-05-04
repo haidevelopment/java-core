@@ -16,6 +16,9 @@ public class BookingDialog extends JDialog {
     private boolean confirmed = false;
     private Booking booking;
     private TripRepository tripRepo = new TripRepository();
+    private JTextField txtCoupon;
+    private JLabel lblDiscount;
+    private com.ticket.repository.CouponRepository couponRepo = new com.ticket.repository.CouponRepository();
 
     public BookingDialog(Frame owner, String title, Booking booking) {
         super(owner, title, true);
@@ -57,6 +60,15 @@ public class BookingDialog extends JDialog {
         gbc.insets = new Insets(0, 0, 20, 0);
         mainPanel.add(cbTrips, gbc);
 
+        cbTrips.addActionListener(e -> {
+            Trip selected = (Trip) cbTrips.getSelectedItem();
+            if (selected != null) {
+                txtAmount.setText(String.valueOf(selected.getBasePrice()));
+                lblDiscount.setText("Chưa áp dụng mã");
+                lblDiscount.setForeground(Color.GRAY);
+            }
+        });
+
         gbc.insets = new Insets(0, 0, 5, 0);
         mainPanel.add(createLabel("Booking Code:"), gbc);
         txtCode = new JTextField();
@@ -77,6 +89,56 @@ public class BookingDialog extends JDialog {
         styleComponent(cbStatus);
         gbc.insets = new Insets(0, 0, 20, 0);
         mainPanel.add(cbStatus, gbc);
+
+        gbc.insets = new Insets(0, 0, 5, 0);
+        mainPanel.add(createLabel("Mã giảm giá:"), gbc);
+        JPanel couponPanel = new JPanel(new BorderLayout(5, 0));
+        couponPanel.setBackground(Color.WHITE);
+        txtCoupon = new JTextField();
+        styleComponent(txtCoupon);
+        JButton btnApply = new JButton("Áp dụng");
+        btnApply.setBackground(new Color(46, 204, 113));
+        btnApply.setForeground(Color.WHITE);
+        btnApply.setFocusPainted(false);
+        couponPanel.add(txtCoupon, BorderLayout.CENTER);
+        couponPanel.add(btnApply, BorderLayout.EAST);
+        gbc.insets = new Insets(0, 0, 5, 0);
+        mainPanel.add(couponPanel, gbc);
+
+        lblDiscount = new JLabel("Chưa áp dụng mã");
+        lblDiscount.setForeground(Color.GRAY);
+        lblDiscount.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        gbc.insets = new Insets(0, 0, 20, 0);
+        mainPanel.add(lblDiscount, gbc);
+
+        btnApply.addActionListener(e -> {
+            String code = txtCoupon.getText().trim();
+            if (code.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập mã giảm giá!");
+                return;
+            }
+            com.ticket.model.Coupon coupon = couponRepo.findByCode(code);
+            if (coupon == null) {
+                lblDiscount.setForeground(Color.RED);
+                lblDiscount.setText("❌ Mã không hợp lệ hoặc đã hết hạn!");
+                return;
+            }
+            try {
+                double amount = Double.parseDouble(txtAmount.getText().trim());
+                double discount = 0;
+                if (coupon.getDiscountPercent() > 0) {
+                    discount = amount * coupon.getDiscountPercent() / 100;
+                } else {
+                    discount = coupon.getDiscountAmount();
+                }
+                double newAmount = Math.max(0, amount - discount);
+                txtAmount.setText(String.format("%.2f", newAmount));
+                lblDiscount.setForeground(new Color(46, 204, 113));
+                lblDiscount.setText("✅ Giảm " + discount + "$ → Còn: $" + String.format("%.2f", newAmount));
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập số tiền trước!");
+            }
+        });
 
         gbc.insets = new Insets(0, 0, 5, 0);
         mainPanel.add(createLabel("Payment Method:"), gbc);
