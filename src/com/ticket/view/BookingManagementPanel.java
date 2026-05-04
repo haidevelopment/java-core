@@ -45,7 +45,7 @@ public class BookingManagementPanel extends JPanel {
         JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219));
         JButton btnDelete = createStyledButton("Cancel Ticket", new Color(231, 76, 60));
         JButton btnDetail = createStyledButton("View Details", new Color(155, 89, 182));
-        JButton btnExport = createStyledButton("Export CSV", new Color(39, 174, 96));
+        JButton btnExport = createStyledButton("Export Excel", new Color(31, 97, 141));
         
         btnPanel.add(btnDelete);
         btnPanel.add(btnDetail);
@@ -77,7 +77,7 @@ public class BookingManagementPanel extends JPanel {
         btnRefresh.addActionListener(e -> loadData());
         btnDelete.addActionListener(e -> deleteTicket());
         btnDetail.addActionListener(e -> viewDetail());
-        btnExport.addActionListener(e -> exportCsv());
+        btnExport.addActionListener(e -> exportExcel());
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -217,6 +217,29 @@ public class BookingManagementPanel extends JPanel {
             }
             JOptionPane.showMessageDialog(this, "Exported " + bookings.size() + " record(s).\n" + file.getAbsolutePath());
         } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void exportExcel() {
+        List<Booking> bookings = bookingRepo.getRecentBookings();
+        if (bookings.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No data to export.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export Tickets to Excel");
+        chooser.setSelectedFile(new File("tickets_export.xlsx"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        String path = chooser.getSelectedFile().getAbsolutePath();
+        if (!path.endsWith(".xlsx")) path += ".xlsx";
+
+        try {
+            com.ticket.repository.ExcelExporter.exportBookings(bookings, path);
+            JOptionPane.showMessageDialog(this, "Exported " + bookings.size() + " record(s).\n" + path);
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
