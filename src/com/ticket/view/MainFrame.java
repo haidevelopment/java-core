@@ -14,7 +14,7 @@ public class MainFrame extends JFrame {
     private User currentUser;
     private BookingRepository bookingRepo;
     private JButton btnLogout;
-    private JButton btnDashboard, btnTrips, btnTickets, btnUsers;
+    private JButton btnDashboard, btnTrips, btnTickets, btnUsers, btnCoupons;
     private java.util.List<JButton> menuButtons = new java.util.ArrayList<>();
     private boolean isAdmin;
     private JPanel cardPanel;
@@ -60,6 +60,10 @@ public class MainFrame extends JFrame {
 
     public JButton getUsersButton() {
         return btnUsers;
+    }
+
+    public JButton getCouponsButton() {
+        return btnCoupons;
     }
 
     public void showPanel(String name, JButton activeBtn) {
@@ -112,6 +116,8 @@ public class MainFrame extends JFrame {
         cardPanel.add(tripPanel, "TRIPS");
         cardPanel.add(bookingPanel, "TICKETS");
         cardPanel.add(userPanel, "USERS");
+        CouponManagementPanel couponPanel = new CouponManagementPanel();
+        cardPanel.add(couponPanel, "COUPONS");
 
         contentPanel.add(cardPanel, BorderLayout.CENTER);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -154,6 +160,10 @@ public class MainFrame extends JFrame {
         for (JButton btn : menuButtons) {
             sidebar.add(btn);
         }
+        btnCoupons = createMenuButton("      Coupons", nextY);
+        menuButtons.add(btnCoupons);
+        sidebar.add(btnCoupons);
+        nextY += 55;
 
         sidebar.add(createMenuButton("      Reports", nextY));
         nextY += 55;

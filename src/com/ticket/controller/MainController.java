@@ -29,6 +29,10 @@ public class MainController {
             mainFrame.showPanel("USERS", mainFrame.getUsersButton());
         });
 
+        mainFrame.getCouponsButton().addActionListener(e -> {
+            mainFrame.showPanel("COUPONS", mainFrame.getCouponsButton());
+        });
+
         mainFrame.getLogoutButton().addActionListener(e -> {
             mainFrame.dispose();
             

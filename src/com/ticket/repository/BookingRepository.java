@@ -8,11 +8,11 @@ import java.util.List;
 public class BookingRepository {
     public List<Booking> getRecentBookings() {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_AMOUNT, b.STATUS " +
-                     "FROM BOOKINGS b " +
-                     "JOIN USERS u ON b.USER_ID = u.ID " +
-                     "JOIN TRIPS t ON b.TRIP_ID = t.ID " +
-                     "ORDER BY b.BOOKING_DATE DESC";
+        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD " +
+                "FROM BOOKINGS b " +
+                "JOIN USERS u ON b.USER_ID = u.ID " +
+                "JOIN TRIPS t ON b.TRIP_ID = t.ID " +
+                "ORDER BY b.BOOKING_DATE DESC";
         
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -20,13 +20,14 @@ public class BookingRepository {
             
             while (rs.next()) {
                 bookings.add(new Booking(
-                    rs.getInt("ID"),
-                    rs.getString("BOOKING_CODE"),
-                    rs.getString("FULL_NAME"),
-                    rs.getString("TRIP_NAME"),
-                    rs.getTimestamp("BOOKING_DATE"),
-                    rs.getDouble("TOTAL_AMOUNT"),
-                    rs.getString("STATUS")
+                        rs.getInt("ID"),
+                        rs.getString("BOOKING_CODE"),
+                        rs.getString("FULL_NAME"),
+                        rs.getString("TRIP_NAME"),
+                        rs.getTimestamp("BOOKING_DATE"),
+                        rs.getDouble("TOTAL_AMOUNT"),
+                        rs.getString("STATUS"),
+                        rs.getString("PAYMENT_METHOD")
                 ));
             }
         } catch (SQLException e) {
