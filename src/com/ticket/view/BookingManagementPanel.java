@@ -203,15 +203,15 @@ public class BookingManagementPanel extends JPanel {
         File file = chooser.getSelectedFile();
         try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
             w.write("\uFEFF"); // BOM for Excel UTF-8
-            w.write("Booking Code,Customer Name,Trip,Booking Date,Status,Payment Method,Total Amount\n");
+            w.write("Booking Code,Customer Name,Trip,Booking Date,Status,Total Amount\n");
             for (Booking b : bookings) {
-                w.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.2f\"\n",
+                w.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.2f\"\n",
                     b.getBookingCode(),
                     b.getCustomerName(),
                     b.getTripName(),
                     b.getBookingDate().toString().substring(0, 16),
                     b.getStatus(),
-                    b.getPaymentMethod() != null ? b.getPaymentMethod() : "N/A",
+                    // b.getPaymentMethod() != null ? b.getPaymentMethod() : "N/A",
                     b.getTotalAmount()
                 ));
             }

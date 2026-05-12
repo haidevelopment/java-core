@@ -56,7 +56,7 @@ public class BookingDetailDialog extends JDialog {
         contentPanel.add(createSection("TRIP & PAYMENT"));
         contentPanel.add(Box.createVerticalStrut(10));
         contentPanel.add(createRow("Trip", booking.getTripName()));
-        contentPanel.add(createRow("Payment Method", booking.getPaymentMethod() != null ? booking.getPaymentMethod() : "N/A"));
+        // contentPanel.add(createRow("Payment Method", booking.getPaymentMethod() != null ? booking.getPaymentMethod() : "N/A"));
         contentPanel.add(createRow("Total Amount", String.format("$%.2f", booking.getTotalAmount())));
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
@@ -136,7 +136,7 @@ public class BookingDetailDialog extends JDialog {
             + "    <div class=\"row\"><span class=\"label\">Customer Name</span><span class=\"value\">" + booking.getCustomerName() + "</span></div>\n"
             + "    <div class=\"section-title\">Trip &amp; Payment</div><hr>\n"
             + "    <div class=\"row\"><span class=\"label\">Trip</span><span class=\"value\">" + booking.getTripName() + "</span></div>\n"
-            + "    <div class=\"row\"><span class=\"label\">Payment Method</span><span class=\"value\">" + (booking.getPaymentMethod() != null ? booking.getPaymentMethod() : "N/A") + "</span></div>\n"
+            // + "    <div class=\"row\"><span class=\"label\">Payment Method</span><span class=\"value\">" + (booking.getPaymentMethod() != null ? booking.getPaymentMethod() : "N/A") + "</span></div>\n"
             + "    <div class=\"row\"><span class=\"label\">Total Amount</span><span class=\"value\">" + String.format("$%.2f", booking.getTotalAmount()) + "</span></div>\n"
             + "  </div>\n"
             + "  <div class=\"footer\">Generated on " + new java.util.Date() + "</div>\n"

@@ -95,16 +95,7 @@ public class MainFrame extends JFrame {
         cardPanel = new JPanel(cardLayout);
         cardPanel.setOpaque(false);
 
-        JPanel dashboardArea = new JPanel();
-        dashboardArea.setLayout(new BoxLayout(dashboardArea, BoxLayout.Y_AXIS));
-        dashboardArea.setBackground(backgroundColor);
-        dashboardArea.setBorder(new EmptyBorder(25, 30, 25, 30));
-        dashboardArea.add(createStatsPanel());
-        dashboardArea.add(Box.createRigidArea(new Dimension(0, 25)));
-        dashboardArea.add(createTablePanel());
-
-        JScrollPane scrollDashboard = new JScrollPane(dashboardArea);
-        scrollDashboard.setBorder(BorderFactory.createEmptyBorder());
+        DashboardPanel dashboardPanel = new DashboardPanel(currentUser);
 
         TripManagementPanel tripPanel = new TripManagementPanel(this.isAdmin);
 
@@ -112,7 +103,7 @@ public class MainFrame extends JFrame {
 
         UserManagementPanel userPanel = new UserManagementPanel();
 
-        cardPanel.add(scrollDashboard, "DASHBOARD");
+        cardPanel.add(dashboardPanel, "DASHBOARD");
         cardPanel.add(tripPanel, "TRIPS");
         cardPanel.add(bookingPanel, "TICKETS");
         cardPanel.add(userPanel, "USERS");
@@ -234,7 +225,7 @@ public class MainFrame extends JFrame {
     private JPanel createStatsPanel() {
         List<Booking> allBookings = bookingRepo.getRecentBookings();
         double revenue = bookingRepo.getTotalRevenue();
-        
+
         JPanel statsPanel = new JPanel(new GridLayout(1, 4, 20, 0));
         statsPanel.setBackground(backgroundColor);
         statsPanel.setMaximumSize(new Dimension(2000, 120));
@@ -267,7 +258,7 @@ public class MainFrame extends JFrame {
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblTitle.setForeground(new Color(120, 130, 140));
-        
+
         JLabel lblValue = new JLabel(value);
         lblValue.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblValue.setForeground(color);
@@ -299,21 +290,23 @@ public class MainFrame extends JFrame {
         lblTableTitle.setBorder(new EmptyBorder(0, 0, 20, 5));
         container.add(lblTableTitle, BorderLayout.NORTH);
 
-        String[] columns = {"CODE", "Customer", "Trip Detail", "Date", "Status", "Amount"};
+        String[] columns = { "CODE", "Customer", "Trip Detail", "Date", "Status", "Amount" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
-        
+
         List<Booking> bookings = bookingRepo.getRecentBookings();
         for (Booking b : bookings) {
-            model.addRow(new Object[]{
-                b.getBookingCode(),
-                b.getCustomerName(),
-                b.getTripName(),
-                b.getBookingDate().toString().substring(0, 16),
-                b.getStatus(),
-                "$" + b.getTotalAmount()
+            model.addRow(new Object[] {
+                    b.getBookingCode(),
+                    b.getCustomerName(),
+                    b.getTripName(),
+                    b.getBookingDate().toString().substring(0, 16),
+                    b.getStatus(),
+                    "$" + b.getTotalAmount()
             });
         }
 
@@ -324,7 +317,7 @@ public class MainFrame extends JFrame {
         table.setSelectionForeground(Color.BLACK);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        
+
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.getTableHeader().setBackground(Color.WHITE);
         table.getTableHeader().setForeground(new Color(100, 100, 100));
@@ -333,20 +326,27 @@ public class MainFrame extends JFrame {
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        
+
         table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel c = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                JLabel c = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
+                        column);
                 c.setHorizontalAlignment(JLabel.CENTER);
                 c.setFont(new Font("Segoe UI", Font.BOLD, 12));
                 String status = (String) value;
-                if ("CONFIRMED".equals(status)) c.setForeground(new Color(46, 204, 113));
-                else if ("PENDING".equals(status)) c.setForeground(new Color(241, 194, 50));
-                else if ("CANCELLED".equals(status)) c.setForeground(new Color(231, 76, 60));
-                
-                if (isSelected) c.setBackground(table.getSelectionBackground());
-                else c.setBackground(Color.WHITE);
+                if ("CONFIRMED".equals(status))
+                    c.setForeground(new Color(46, 204, 113));
+                else if ("PENDING".equals(status))
+                    c.setForeground(new Color(241, 194, 50));
+                else if ("CANCELLED".equals(status))
+                    c.setForeground(new Color(231, 76, 60));
+
+                if (isSelected)
+                    c.setBackground(table.getSelectionBackground());
+                else
+                    c.setBackground(Color.WHITE);
                 return c;
             }
         });
