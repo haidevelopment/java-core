@@ -187,7 +187,7 @@ public class DatabaseConnection {
                     "INSERT INTO USERS (USERNAME, PASSWORD, FULL_NAME, ROLE) VALUES ('admin', 'admin123', 'Administrator', 'ADMIN')");
             System.out.println(">>> Đã tạo tài khoản admin mặc định.");
         } catch (SQLException e) {
-              e.printStackTrace();
+            e.printStackTrace();
         }
 
         // 2. Chèn chuyến đi mẫu
@@ -202,7 +202,7 @@ public class DatabaseConnection {
                             "VALUES ('Saigon - Nha Trang', 'Saigon', 'Nha Trang', 120.0, 30, 20)");
             System.out.println(">>> Đã chèn dữ liệu Trip mẫu.");
         } catch (SQLException e) {
-              e.printStackTrace();
+            e.printStackTrace();
         }
 
         // 3. Chèn Booking mẫu (Liên kết User ID 1 và Trip ID 1)
@@ -218,7 +218,7 @@ public class DatabaseConnection {
                             "VALUES ('BK-000', 1, 1, 150.0, 'CANCELLED', 'E-WALLET')");
             System.out.println(">>> Đã chèn dữ liệu Booking mẫu.");
         } catch (SQLException e) {
-              e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
