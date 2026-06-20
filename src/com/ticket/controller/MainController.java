@@ -33,6 +33,10 @@ public class MainController {
             mainFrame.showPanel("COUPONS", mainFrame.getCouponsButton());
         });
 
+        mainFrame.getSettingsButton().addActionListener(e -> {
+            mainFrame.showPanel("SETTINGS", mainFrame.getSettingsButton());
+        });
+
         mainFrame.getLogoutButton().addActionListener(e -> {
             mainFrame.dispose();
             
