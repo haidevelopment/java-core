@@ -1,6 +1,6 @@
 package com.ticket.view;
 
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -11,18 +11,18 @@ public class UserDialog extends JDialog {
     private JComboBox<String> cbRole;
     private JButton btnSave, btnCancel;
     private boolean confirmed = false;
-    private User user;
+    private Account account;
 
-    public UserDialog(Frame owner, String title, User user) {
+    public UserDialog(Frame owner, String title, Account account) {
         super(owner, title, true);
-        this.user = user;
+        this.account = account;
         
         setSize(400, 500);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
         
         initComponents();
-        if (user != null) {
+        if (account != null) {
             populateFields();
         }
     }
@@ -40,11 +40,11 @@ public class UserDialog extends JDialog {
         mainPanel.add(createLabel("Username:"), gbc);
         txtUsername = new JTextField();
         styleComponent(txtUsername);
-        if (user != null) txtUsername.setEditable(false); // Không cho sửa username
+        if (account != null) txtUsername.setEditable(false);
         gbc.insets = new Insets(0, 0, 15, 0);
         mainPanel.add(txtUsername, gbc);
 
-        if (user == null) {
+        if (account == null) {
             gbc.insets = new Insets(0, 0, 5, 0);
             mainPanel.add(createLabel("Password:"), gbc);
             txtPassword = new JPasswordField();
@@ -62,7 +62,7 @@ public class UserDialog extends JDialog {
 
         gbc.insets = new Insets(0, 0, 5, 0);
         mainPanel.add(createLabel("Role:"), gbc);
-        cbRole = new JComboBox<>(new String[]{"USER", "ADMIN"});
+        cbRole = new JComboBox<>(new String[]{"ADMIN", "STAFF", "CUSTOMER"});
         styleComponent(cbRole);
         gbc.insets = new Insets(0, 0, 15, 0);
         mainPanel.add(cbRole, gbc);
@@ -87,14 +87,14 @@ public class UserDialog extends JDialog {
     }
 
     private void populateFields() {
-        txtUsername.setText(user.getUsername());
-        txtFullName.setText(user.getFullName());
-        cbRole.setSelectedItem(user.getRole());
+        txtUsername.setText(account.getUsername());
+        txtFullName.setText(account.getFullName());
+        cbRole.setSelectedItem(account.getRole());
     }
 
     private boolean validateInput() {
         if (txtUsername.getText().trim().isEmpty()) return false;
-        if (user == null && new String(txtPassword.getPassword()).isEmpty()) return false;
+        if (account == null && new String(txtPassword.getPassword()).isEmpty()) return false;
         if (txtFullName.getText().trim().isEmpty()) return false;
         return true;
     }

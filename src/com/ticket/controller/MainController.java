@@ -29,6 +29,10 @@ public class MainController {
             mainFrame.showPanel("USERS", mainFrame.getUsersButton());
         });
 
+        mainFrame.getCustomersButton().addActionListener(e -> {
+            mainFrame.showPanel("CUSTOMERS", mainFrame.getCustomersButton());
+        });
+
         mainFrame.getCouponsButton().addActionListener(e -> {
             mainFrame.showPanel("COUPONS", mainFrame.getCouponsButton());
         });

@@ -51,6 +51,7 @@ public class BookingDetailDialog extends JDialog {
         contentPanel.add(createSection("CUSTOMER INFORMATION"));
         contentPanel.add(Box.createVerticalStrut(10));
         contentPanel.add(createRow("Customer Name", booking.getCustomerName()));
+        contentPanel.add(createRow("Phone Number", booking.getCustomerPhone()));
 
         contentPanel.add(Box.createVerticalStrut(20));
         contentPanel.add(createSection("TRIP & PAYMENT"));
@@ -134,6 +135,7 @@ public class BookingDetailDialog extends JDialog {
             + "    <div class=\"row\"><span class=\"label\">Status</span><span class=\"value status\">" + booking.getStatus() + "</span></div>\n"
             + "    <div class=\"section-title\">Customer Information</div><hr>\n"
             + "    <div class=\"row\"><span class=\"label\">Customer Name</span><span class=\"value\">" + booking.getCustomerName() + "</span></div>\n"
+            + "    <div class=\"row\"><span class=\"label\">Phone Number</span><span class=\"value\">" + booking.getCustomerPhone() + "</span></div>\n"
             + "    <div class=\"section-title\">Trip &amp; Payment</div><hr>\n"
             + "    <div class=\"row\"><span class=\"label\">Trip</span><span class=\"value\">" + booking.getTripName() + "</span></div>\n"
             // + "    <div class=\"row\"><span class=\"label\">Payment Method</span><span class=\"value\">" + (booking.getPaymentMethod() != null ? booking.getPaymentMethod() : "N/A") + "</span></div>\n"

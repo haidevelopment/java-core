@@ -1,6 +1,6 @@
 package com.ticket.view;
 
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import com.ticket.model.Booking;
 import com.ticket.repository.BookingRepository;
 import javax.swing.*;
@@ -11,10 +11,10 @@ import java.awt.*;
 import java.util.List;
 
 public class MainFrame extends JFrame {
-    private User currentUser;
+    private Account currentUser;
     private BookingRepository bookingRepo;
     private JButton btnLogout;
-    private JButton btnDashboard, btnTrips, btnTickets, btnUsers, btnCoupons, btnSettings;
+    private JButton btnDashboard, btnTrips, btnTickets, btnUsers, btnCustomers, btnCoupons, btnSettings;
     private java.util.List<JButton> menuButtons = new java.util.ArrayList<>();
     private boolean isAdmin;
     private JPanel cardPanel;
@@ -25,10 +25,10 @@ public class MainFrame extends JFrame {
     private final Color backgroundColor = new Color(240, 242, 245);
     private final Color primaryBlue = new Color(41, 128, 185);
 
-    public MainFrame(User user) {
-        this.currentUser = user;
+    public MainFrame(Account account) {
+        this.currentUser = account;
         this.bookingRepo = new BookingRepository();
-        this.isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getRole());
+        this.isAdmin = "ADMIN".equals(currentUser.getRole());
 
         if (this.isAdmin) {
             setTitle("Booking Pro - Admin Dashboard");
@@ -60,6 +60,10 @@ public class MainFrame extends JFrame {
 
     public JButton getUsersButton() {
         return btnUsers;
+    }
+
+    public JButton getCustomersButton() {
+        return btnCustomers;
     }
 
     public JButton getCouponsButton() {
@@ -103,14 +107,16 @@ public class MainFrame extends JFrame {
 
         TripManagementPanel tripPanel = new TripManagementPanel(this.isAdmin);
 
-        BookingManagementPanel bookingPanel = new BookingManagementPanel(this.isAdmin);
+        BookingManagementPanel bookingPanel = new BookingManagementPanel(this.currentUser);
 
         UserManagementPanel userPanel = new UserManagementPanel();
+        CustomerManagementPanel customerPanel = new CustomerManagementPanel();
 
         cardPanel.add(dashboardPanel, "DASHBOARD");
         cardPanel.add(tripPanel, "TRIPS");
         cardPanel.add(bookingPanel, "TICKETS");
         cardPanel.add(userPanel, "USERS");
+        cardPanel.add(customerPanel, "CUSTOMERS");
         CouponManagementPanel couponPanel = new CouponManagementPanel();
         cardPanel.add(couponPanel, "COUPONS");
         SettingsPanel settingsPanel = new SettingsPanel(currentUser);
@@ -144,7 +150,7 @@ public class MainFrame extends JFrame {
         int nextY = 295;
 
         if (this.isAdmin) {
-            btnUsers = createMenuButton("      Users", nextY);
+            btnUsers = createMenuButton("      Accounts", nextY);
             menuButtons.add(btnUsers);
             nextY += 55;
         } else {
@@ -157,6 +163,12 @@ public class MainFrame extends JFrame {
         for (JButton btn : menuButtons) {
             sidebar.add(btn);
         }
+        
+        btnCustomers = createMenuButton("      Customers", nextY);
+        menuButtons.add(btnCustomers);
+        sidebar.add(btnCustomers);
+        nextY += 55;
+        
         btnCoupons = createMenuButton("      Coupons", nextY);
         menuButtons.add(btnCoupons);
         sidebar.add(btnCoupons);
@@ -314,7 +326,7 @@ public class MainFrame extends JFrame {
                     b.getTripName(),
                     b.getBookingDate().toString().substring(0, 16),
                     b.getStatus(),
-                    "$" + b.getTotalAmount()
+                    String.format("%,.0f VNĐ", b.getTotalAmount())
             });
         }
 

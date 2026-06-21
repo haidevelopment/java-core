@@ -36,65 +36,67 @@ public class AppSettings {
 
 
     public static void load() {
-
         props.clear();
 
-        props.setProperty("company.name", "Booking Pro");
-
-        props.setProperty("company.hotline", "1900 1234");
-
-        props.setProperty("ticket.footer", "Cảm ơn quý khách. Vui lòng xuất trình vé khi lên xe.");
-
+        // Default system properties
         props.setProperty("web.base.url", "http://localhost:5173");
-
         props.setProperty("api.port", "8080");
 
+        // Default user properties
+        props.setProperty("company.name", "Booking Pro");
+        props.setProperty("company.hotline", "1900 1234");
+        props.setProperty("ticket.footer", "Cảm ơn quý khách. Vui lòng xuất trình vé khi lên xe.");
         props.setProperty("sms.enabled", "true");
-
         props.setProperty("sms.provider", "console");
-
         props.setProperty("sms.webhook.url", "");
-
         props.setProperty("sms.api.key", "");
 
-
-
-        if (!Files.exists(SETTINGS_PATH)) {
-
-            save();
-
-            return;
-
+        if (Files.exists(SETTINGS_PATH)) {
+            try (InputStream in = Files.newInputStream(SETTINGS_PATH)) {
+                props.load(in);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
-
-
-        try (InputStream in = Files.newInputStream(SETTINGS_PATH)) {
-
-            props.load(in);
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-
+        try {
+            com.ticket.repository.SettingsRepository repo = new com.ticket.repository.SettingsRepository();
+            java.util.Map<String, String> dbSettings = repo.getAllSettings();
+            for (java.util.Map.Entry<String, String> entry : dbSettings.entrySet()) {
+                props.setProperty(entry.getKey(), entry.getValue());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load settings from DB: " + e.getMessage());
         }
-
     }
 
-
-
     public static void save() {
-
-        try (OutputStream out = Files.newOutputStream(SETTINGS_PATH)) {
-
-            props.store(out, "Booking Pro Settings");
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-
+        // Save user properties to DB
+        try {
+            com.ticket.repository.SettingsRepository repo = new com.ticket.repository.SettingsRepository();
+            java.util.Map<String, String> dbSettings = new java.util.HashMap<>();
+            dbSettings.put("company.name", props.getProperty("company.name", ""));
+            dbSettings.put("company.hotline", props.getProperty("company.hotline", ""));
+            dbSettings.put("ticket.footer", props.getProperty("ticket.footer", ""));
+            dbSettings.put("sms.enabled", props.getProperty("sms.enabled", "false"));
+            dbSettings.put("sms.provider", props.getProperty("sms.provider", "console"));
+            dbSettings.put("sms.webhook.url", props.getProperty("sms.webhook.url", ""));
+            dbSettings.put("sms.api.key", props.getProperty("sms.api.key", ""));
+            repo.saveAllSettings(dbSettings);
+        } catch (Exception e) {
+            System.err.println("Failed to save settings to DB: " + e.getMessage());
         }
 
+        // Save system properties to file
+        Properties fileProps = new Properties();
+        fileProps.setProperty("web.base.url", props.getProperty("web.base.url", "http://localhost:5173"));
+        fileProps.setProperty("api.port", props.getProperty("api.port", "8080"));
+        
+        try (OutputStream out = Files.newOutputStream(SETTINGS_PATH)) {
+            fileProps.store(out, "Booking Pro System Settings");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

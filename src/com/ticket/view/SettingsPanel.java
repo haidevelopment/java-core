@@ -1,6 +1,6 @@
 package com.ticket.view;
 
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import com.ticket.repository.UserRepository;
 import com.ticket.util.AppSettings;
 
@@ -9,14 +9,12 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class SettingsPanel extends JPanel {
-    private final User currentUser;
+    private final Account currentUser;
     private final UserRepository userRepo = new UserRepository();
 
     private JTextField txtCompanyName;
     private JTextField txtHotline;
     private JTextArea txtFooter;
-    private JTextField txtWebBaseUrl;
-    private JTextField txtApiPort;
     private JCheckBox chkSmsEnabled;
     private JComboBox<String> cbSmsProvider;
     private JTextField txtSmsWebhookUrl;
@@ -25,8 +23,8 @@ public class SettingsPanel extends JPanel {
     private JPasswordField txtNewPassword;
     private JPasswordField txtConfirmPassword;
 
-    public SettingsPanel(User user) {
-        this.currentUser = user;
+    public SettingsPanel(Account account) {
+        this.currentUser = account;
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
         setBorder(new EmptyBorder(25, 30, 25, 30));
@@ -100,27 +98,21 @@ public class SettingsPanel extends JPanel {
         gbc.gridx = 0;
         gbc.weightx = 1.0;
 
-        txtWebBaseUrl = new JTextField(30);
-        txtApiPort = new JTextField(10);
         chkSmsEnabled = new JCheckBox("Send SMS when booking success");
         cbSmsProvider = new JComboBox<>(new String[]{"console", "webhook"});
         txtSmsWebhookUrl = new JTextField(30);
         txtSmsApiKey = new JPasswordField(30);
 
         gbc.gridy = 0;
-        card.add(createField("Link web e-ticket", txtWebBaseUrl), gbc);
-        gbc.gridy = 1;
-        card.add(createField("API PORT", txtApiPort), gbc);
-        gbc.gridy = 2;
         card.add(chkSmsEnabled, gbc);
-        gbc.gridy = 3;
+        gbc.gridy = 1;
         card.add(createField("SMS Provider (console/webhook)", cbSmsProvider), gbc);
-        gbc.gridy = 4;
+        gbc.gridy = 2;
         card.add(createField("Webhook SMS URL", txtSmsWebhookUrl), gbc);
-        gbc.gridy = 5;
+        gbc.gridy = 3;
         card.add(createField("SMS API Key", txtSmsApiKey), gbc);
 
-        gbc.gridy = 6;
+        gbc.gridy = 4;
         gbc.insets = new Insets(16, 0, 0, 0);
         JButton btnSave = createButton("Save web & SMS", new Color(52, 152, 219));
         btnSave.addActionListener(e -> saveWebSmsSettings());
@@ -233,8 +225,6 @@ public class SettingsPanel extends JPanel {
         txtCompanyName.setText(AppSettings.getCompanyName());
         txtHotline.setText(AppSettings.getCompanyHotline());
         txtFooter.setText(AppSettings.getTicketFooter());
-        txtWebBaseUrl.setText(AppSettings.getWebBaseUrl());
-        txtApiPort.setText(String.valueOf(AppSettings.getApiPort()));
         chkSmsEnabled.setSelected(AppSettings.isSmsEnabled());
         cbSmsProvider.setSelectedItem(AppSettings.getSmsProvider());
         txtSmsWebhookUrl.setText(AppSettings.getSmsWebhookUrl());
@@ -255,19 +245,12 @@ public class SettingsPanel extends JPanel {
     }
 
     private void saveWebSmsSettings() {
-        if (txtWebBaseUrl.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter the link of e-ticket web.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        AppSettings.setWebBaseUrl(txtWebBaseUrl.getText());
-        AppSettings.setApiPort(txtApiPort.getText());
         AppSettings.setSmsEnabled(chkSmsEnabled.isSelected());
         AppSettings.setSmsProvider((String) cbSmsProvider.getSelectedItem());
         AppSettings.setSmsWebhookUrl(txtSmsWebhookUrl.getText());
         AppSettings.setSmsApiKey(new String(txtSmsApiKey.getPassword()));
         AppSettings.save();
-        JOptionPane.showMessageDialog(this, "Saved web & SMS.\n You need to restart app to use new API port.");
+        JOptionPane.showMessageDialog(this, "Saved SMS settings.");
     }
 
     private void changePassword() {

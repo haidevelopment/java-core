@@ -9,6 +9,10 @@ public class Main {
     public static void main(String[] args) {
         DatabaseConnection.initDatabase();
 
+        com.ticket.api.TicketApi apiServer = new com.ticket.api.TicketApi();
+        //Start api cho phép web client tương tác 
+        apiServer.start();
+
         SwingUtilities.invokeLater(() -> {
             LoginFrame loginFrame = new LoginFrame();
             new LoginController(loginFrame);

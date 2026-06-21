@@ -32,4 +32,6 @@ public class Trip {
     public double getBasePrice() { return basePrice; }
     public int getTotalSeats() { return totalSeats; }
     public int getAvailableSeats() { return availableSeats; }
+
+    public void setAvailableSeats(int availableSeats) { this.availableSeats = availableSeats; }
 }

@@ -24,13 +24,13 @@ public class CouponManagementPanel extends JPanel {
         setBackground(Color.WHITE);
 
         // Tiêu đề
-        JLabel title = new JLabel("Quản lý mã giảm giá", SwingConstants.CENTER);
+        JLabel title = new JLabel("Coupon Management", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
         add(title, BorderLayout.NORTH);
 
         // Bảng dữ liệu
-        String[] columns = {"ID", "Mã", "Giảm %", "Giảm tiền", "Hạn dùng", "Kích hoạt"};
+        String[] columns = {"ID", "Code", "Discount %", "Discount Amount", "Expiry Date", "Active"};
         tableModel = new DefaultTableModel(columns, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -41,7 +41,7 @@ public class CouponManagementPanel extends JPanel {
 
         // Form nhập
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Thông tin mã giảm giá"));
+        form.setBorder(BorderFactory.createTitledBorder("Coupon Information"));
         form.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -51,10 +51,10 @@ public class CouponManagementPanel extends JPanel {
         txtPercent = new JTextField(15);
         txtAmount  = new JTextField(15);
         txtDate    = new JTextField(15);
-        txtDate.setToolTipText("Định dạng: dd/MM/yyyy");
-        chkActive  = new JCheckBox("Kích hoạt", true);
+        txtDate.setToolTipText("Format: dd/MM/yyyy");
+        chkActive  = new JCheckBox("Active", true);
 
-        String[] labels = {"Mã giảm giá:", "Giảm % :", "Giảm tiền:", "Hạn dùng (dd/MM/yyyy):"};
+        String[] labels = {"Coupon Code:", "Discount %:", "Discount Amount:", "Expiry Date (dd/MM/yyyy):"};
         JComponent[] fields = {txtCode, txtPercent, txtAmount, txtDate};
 
         for (int i = 0; i < labels.length; i++) {
@@ -70,10 +70,10 @@ public class CouponManagementPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         btnPanel.setBackground(Color.WHITE);
 
-        JButton btnAdd    = new JButton("➕ Thêm");
-        JButton btnUpdate = new JButton("✏️ Sửa");
-        JButton btnDelete = new JButton("🗑️ Xóa");
-        JButton btnClear  = new JButton("🔄 Làm mới");
+        JButton btnAdd    = new JButton("➕ Add");
+        JButton btnUpdate = new JButton("✏️ Edit");
+        JButton btnDelete = new JButton("🗑️ Delete");
+        JButton btnClear  = new JButton("🔄 Refresh");
 
         btnAdd.setBackground(new Color(40, 167, 69));
         btnAdd.setForeground(Color.WHITE);
@@ -127,7 +127,7 @@ public class CouponManagementPanel extends JPanel {
 
     private Coupon buildCoupon() throws Exception {
         String code = txtCode.getText().trim();
-        if (code.isEmpty()) throw new Exception("Vui lòng nhập mã giảm giá!");
+        if (code.isEmpty()) throw new Exception("Please enter coupon code!");
         double percent = txtPercent.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtPercent.getText().trim());
         double amount  = txtAmount.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtAmount.getText().trim());
         Date date = new SimpleDateFormat("dd/MM/yyyy").parse(txtDate.getText().trim());
@@ -139,34 +139,34 @@ public class CouponManagementPanel extends JPanel {
     private void addCoupon() {
         try {
             repo.addCoupon(buildCoupon());
-            JOptionPane.showMessageDialog(this, "Thêm mã giảm giá thành công!");
+            JOptionPane.showMessageDialog(this, "Coupon added successfully!");
             clearForm(); loadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
     private void updateCoupon() {
         int row = table.getSelectedRow();
-        if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn mã cần sửa!"); return; }
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Please select a coupon to edit!"); return; }
         try {
             Coupon c = buildCoupon();
             c.setId((int) tableModel.getValueAt(row, 0));
             repo.updateCoupon(c);
-            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+            JOptionPane.showMessageDialog(this, "Updated successfully!");
             clearForm(); loadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
     private void deleteCoupon() {
         int row = table.getSelectedRow();
-        if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn mã cần xóa!"); return; }
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn chắc chắn muốn xóa?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Please select a coupon to delete!"); return; }
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete?", "Confirm", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             repo.deleteCoupon((int) tableModel.getValueAt(row, 0));
-            JOptionPane.showMessageDialog(this, "Xóa thành công!");
+            JOptionPane.showMessageDialog(this, "Deleted successfully!");
             clearForm(); loadData();
         }
     }
