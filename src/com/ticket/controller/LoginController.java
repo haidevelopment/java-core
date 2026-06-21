@@ -1,6 +1,6 @@
 package com.ticket.controller;
 
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import com.ticket.repository.UserRepository;
 import com.ticket.view.LoginFrame;
 import com.ticket.view.MainFrame;
@@ -29,14 +29,14 @@ public class LoginController {
                 return;
             }
             
-            User user = userRepository.login(username, password);
-            if (user != null) {
-                JOptionPane.showMessageDialog(loginFrame, "Login successful! Welcome " + user.getFullName());
+            Account account = userRepository.login(username, password);
+            if (account != null) {
+                JOptionPane.showMessageDialog(loginFrame, "Login successful! Welcome " + account.getFullName());
                 
                 loginFrame.dispose(); 
                 
                 SwingUtilities.invokeLater(() -> {
-                    MainFrame mainFrame = new MainFrame(user);
+                    MainFrame mainFrame = new MainFrame(account);
                     new MainController(mainFrame);
                     mainFrame.setVisible(true);
                 });

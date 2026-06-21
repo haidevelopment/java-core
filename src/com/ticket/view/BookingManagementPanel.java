@@ -1,6 +1,8 @@
 package com.ticket.view;
 
 import com.ticket.model.Booking;
+import com.ticket.model.Customer;
+import com.ticket.model.Account;
 import com.ticket.repository.BookingRepository;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,10 +17,10 @@ public class BookingManagementPanel extends JPanel {
     private BookingRepository bookingRepo;
     private JTable table;
     private DefaultTableModel tableModel;
-    private boolean isAdmin;
+    private Account currentUser;
 
-    public BookingManagementPanel(boolean isAdmin) {
-        this.isAdmin = isAdmin;
+    public BookingManagementPanel(Account currentUser) {
+        this.currentUser = currentUser;
         this.bookingRepo = new BookingRepository();
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
@@ -58,7 +60,7 @@ public class BookingManagementPanel extends JPanel {
         add(headerPanel, BorderLayout.NORTH);
 
         // 2. Table
-        String[] columns = {"CODE", "Customer", "Trip", "Date", "Status", "Amount"};
+        String[] columns = {"CODE", "Customer", "Created By", "Trip", "Date", "Status", "Amount"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -106,10 +108,32 @@ public class BookingManagementPanel extends JPanel {
         dialog.setVisible(true);
 
         if (dialog.isConfirmed()) {
-            if (bookingRepo.addBooking(1, dialog.getSelectedTrip().getId(), 
-                    dialog.getCode(), dialog.getAmount(), dialog.getStatus(), dialog.getPayment())) {
-                loadData();
-                JOptionPane.showMessageDialog(this, "Ticket booked successfully!");
+            Customer customer = dialog.getSelectedCustomer();
+            if (customer != null) {
+                int newId = bookingRepo.addBookingReturnId(
+                        currentUser.getId(), 
+                        customer.getId(),
+                        dialog.getSelectedTrip().getId(), 
+                        dialog.getTotalSeats(),
+                        dialog.getAmount(), 
+                        dialog.getStatus(), 
+                        dialog.getPayment()
+                );
+                if (newId > 0) {
+                    com.ticket.model.Trip trip = dialog.getSelectedTrip();
+                    trip.setAvailableSeats(trip.getAvailableSeats() - dialog.getTotalSeats());
+                    new com.ticket.repository.TripRepository().updateTrip(trip);
+
+                    loadData();
+                    JOptionPane.showMessageDialog(this, "Ticket booked successfully! Code: BK-" + newId);
+                    
+                    // Simulate sending SMS
+                    String reactPort = System.getProperty("REACT_PORT", "5173");
+                    System.out.println("========== SMS SIMULATION ==========");
+                    System.out.println("To: " + customer.getPhoneNumber());
+                    System.out.println("Message: Đặt vé thành công! Bạn có thể xem chi tiết vé của mình tại: http://localhost:" + reactPort + "/ticket/BK-" + newId);
+                    System.out.println("====================================");
+                }
             }
         }
     }
@@ -129,7 +153,8 @@ public class BookingManagementPanel extends JPanel {
         }
     }
 
-    private void editBooking() {        int row = table.getSelectedRow();
+    private void editBooking() {        
+        int row = table.getSelectedRow();
         if (row == -1) return;
 
         String code = (String) table.getValueAt(row, 0);
@@ -156,11 +181,12 @@ public class BookingManagementPanel extends JPanel {
         for (Booking b : bookings) {
             tableModel.addRow(new Object[]{
                 b.getBookingCode(),
-                b.getCustomerName(),
+                b.getCustomerName() + " - " + b.getCustomerPhone(),
+                b.getCreatedByName(),
                 b.getTripName(),
-                b.getBookingDate().toString().substring(0, 16),
+                b.getBookingDate() != null ? b.getBookingDate().toString().substring(0, 16) : "",
                 b.getStatus(),
-                "$" + b.getTotalAmount()
+                String.format("%,.0f VNĐ", b.getTotalAmount())
             });
         }
         tableModel.fireTableDataChanged();
@@ -181,6 +207,13 @@ public class BookingManagementPanel extends JPanel {
                     .filter(b -> b.getBookingCode().equals(code)).findFirst().orElse(null);
             
             if (selected != null && bookingRepo.deleteBooking(selected.getId())) {
+                com.ticket.model.Trip trip = new com.ticket.repository.TripRepository().getAllTrips().stream()
+                        .filter(t -> t.getTripName().equals(selected.getTripName())).findFirst().orElse(null);
+                if (trip != null) {
+                    trip.setAvailableSeats(trip.getAvailableSeats() + selected.getTotalSeats());
+                    new com.ticket.repository.TripRepository().updateTrip(trip);
+                }
+                
                 loadData();
                 JOptionPane.showMessageDialog(this, "Ticket cancelled and removed from system.");
             }
@@ -203,15 +236,16 @@ public class BookingManagementPanel extends JPanel {
         File file = chooser.getSelectedFile();
         try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
             w.write("\uFEFF"); // BOM for Excel UTF-8
-            w.write("Booking Code,Customer Name,Trip,Booking Date,Status,Total Amount\n");
+            w.write("Booking Code,Customer Name,Customer Phone,Created By,Trip,Booking Date,Status,Total Amount\n");
             for (Booking b : bookings) {
-                w.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.2f\"\n",
+                w.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.2f\"\n",
                     b.getBookingCode(),
                     b.getCustomerName(),
+                    b.getCustomerPhone(),
+                    b.getCreatedByName(),
                     b.getTripName(),
-                    b.getBookingDate().toString().substring(0, 16),
+                    b.getBookingDate() != null ? b.getBookingDate().toString().substring(0, 16) : "",
                     b.getStatus(),
-                    // b.getPaymentMethod() != null ? b.getPaymentMethod() : "N/A",
                     b.getTotalAmount()
                 ));
             }
@@ -275,7 +309,7 @@ public class BookingManagementPanel extends JPanel {
         table.setShowVerticalLines(false);
         table.setGridColor(new Color(240, 240, 240));
         
-        table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
+        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

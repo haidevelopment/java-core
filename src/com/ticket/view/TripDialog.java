@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 
 public class TripDialog extends JDialog {
     private JTextField txtName, txtFrom, txtTo, txtPrice, txtTotalSeats, txtAvailableSeats;
+    private JComboBox<Integer> cbDay, cbMonth, cbYear, cbHour, cbMinute;
     private JButton btnSave, btnCancel;
     private boolean confirmed = false;
     private Trip trip;
@@ -41,7 +42,11 @@ public class TripDialog extends JDialog {
         txtTo = createField(mainFormPanel, "To:");
         mainFormPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         
-        txtPrice = createField(mainFormPanel, "Price ($):");
+        JPanel pnlDeparture = createDateTimePickerPanel("Departure Time:");
+        mainFormPanel.add(pnlDeparture);
+        mainFormPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        
+        txtPrice = createField(mainFormPanel, "Price (VNĐ):");
         mainFormPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         
         txtTotalSeats = createField(mainFormPanel, "Total Seats:");
@@ -77,7 +82,17 @@ public class TripDialog extends JDialog {
             Double.parseDouble(txtPrice.getText());
             Integer.parseInt(txtTotalSeats.getText());
             Integer.parseInt(txtAvailableSeats.getText());
+            
+            // Validate valid date (e.g., not 31st of Feb)
+            int day = (int) cbDay.getSelectedItem();
+            int month = (int) cbMonth.getSelectedItem();
+            int year = (int) cbYear.getSelectedItem();
+            java.time.LocalDate.of(year, month, day); // Will throw exception if invalid date
+
             return true;
+        } catch (java.time.DateTimeException dte) {
+            JOptionPane.showMessageDialog(this, "Invalid Date (e.g., 31st of February).", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return false;
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Please check your input data!", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -102,11 +117,63 @@ public class TripDialog extends JDialog {
         return field;
     }
 
+    private JPanel createDateTimePickerPanel(String labelText) {
+        JPanel fieldGroup = new JPanel(new BorderLayout(5, 5));
+        fieldGroup.setOpaque(false);
+        fieldGroup.setMaximumSize(new Dimension(1000, 65));
+        
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        
+        JPanel pickers = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        pickers.setOpaque(false);
+        
+        Integer[] days = new Integer[31]; for(int i=0; i<31; i++) days[i] = i+1;
+        Integer[] months = new Integer[12]; for(int i=0; i<12; i++) months[i] = i+1;
+        Integer[] years = new Integer[20]; 
+        int currentYear = java.time.Year.now().getValue();
+        for(int i=0; i<20; i++) years[i] = currentYear + i;
+        
+        Integer[] hours = new Integer[24]; for(int i=0; i<24; i++) hours[i] = i;
+        Integer[] minutes = new Integer[60]; for(int i=0; i<60; i++) minutes[i] = i;
+        
+        cbDay = new JComboBox<>(days);
+        cbMonth = new JComboBox<>(months);
+        cbYear = new JComboBox<>(years);
+        cbHour = new JComboBox<>(hours);
+        cbMinute = new JComboBox<>(minutes);
+        
+        pickers.add(cbDay);
+        pickers.add(new JLabel("/"));
+        pickers.add(cbMonth);
+        pickers.add(new JLabel("/"));
+        pickers.add(cbYear);
+        pickers.add(Box.createRigidArea(new Dimension(10, 0)));
+        pickers.add(cbHour);
+        pickers.add(new JLabel(":"));
+        pickers.add(cbMinute);
+        
+        fieldGroup.add(label, BorderLayout.NORTH);
+        fieldGroup.add(pickers, BorderLayout.CENTER);
+        
+        return fieldGroup;
+    }
+
     private void populateFields() {
         txtName.setText(trip.getTripName());
         txtFrom.setText(trip.getStartLocation());
         txtTo.setText(trip.getEndLocation());
-        txtPrice.setText(String.valueOf(trip.getBasePrice()));
+        
+        if (trip.getDepartureTime() != null) {
+            java.time.LocalDateTime ldt = trip.getDepartureTime().toLocalDateTime();
+            cbDay.setSelectedItem(ldt.getDayOfMonth());
+            cbMonth.setSelectedItem(ldt.getMonthValue());
+            cbYear.setSelectedItem(ldt.getYear());
+            cbHour.setSelectedItem(ldt.getHour());
+            cbMinute.setSelectedItem(ldt.getMinute());
+        }
+        
+        txtPrice.setText(String.format("%.0f", trip.getBasePrice()));
         txtTotalSeats.setText(String.valueOf(trip.getTotalSeats()));
         txtAvailableSeats.setText(String.valueOf(trip.getAvailableSeats()));
     }
@@ -122,6 +189,15 @@ public class TripDialog extends JDialog {
         int total = Integer.parseInt(txtTotalSeats.getText());
         int avail = Integer.parseInt(txtAvailableSeats.getText());
         
-        return new Trip(id, name, from, to, (trip != null ? trip.getDepartureTime() : new Timestamp(System.currentTimeMillis())), price, total, avail);
+        int day = (int) cbDay.getSelectedItem();
+        int month = (int) cbMonth.getSelectedItem();
+        int year = (int) cbYear.getSelectedItem();
+        int hour = (int) cbHour.getSelectedItem();
+        int minute = (int) cbMinute.getSelectedItem();
+        
+        java.time.LocalDateTime ldt = java.time.LocalDateTime.of(year, month, day, hour, minute);
+        Timestamp depTime = Timestamp.valueOf(ldt);
+        
+        return new Trip(id, name, from, to, depTime, price, total, avail);
     }
 }

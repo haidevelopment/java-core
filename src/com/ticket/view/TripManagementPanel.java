@@ -199,7 +199,7 @@ public class TripManagementPanel extends JPanel {
                     t.getStartLocation(),
                     t.getEndLocation(),
                     departure,
-                    "$" + t.getBasePrice(),
+                    String.format("%,.0f VNĐ", t.getBasePrice()),
                     t.getTotalSeats(),
                     t.getAvailableSeats()
             });

@@ -1,13 +1,13 @@
 package com.ticket.repository;
 
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
-    public User login(String username, String password) {
-        String sql = "SELECT * FROM USERS WHERE USERNAME = ? AND PASSWORD = ?";
+    public Account login(String username, String password) {
+        String sql = "SELECT * FROM ACCOUNTS WHERE USERNAME = ? AND PASSWORD = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -16,11 +16,12 @@ public class UserRepository {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new User(
+                    return new Account(
                             rs.getInt("ID"),
                             rs.getString("USERNAME"),
                             rs.getString("FULL_NAME"),
-                            rs.getString("ROLE"));
+                            rs.getString("ROLE"),
+                            rs.getString("PHONE_NUMBER"));
                 }
             }
         } catch (SQLException e) {
@@ -30,7 +31,7 @@ public class UserRepository {
     }
 
     public boolean addUser(String username, String password, String fullName, String role) {
-        String sql = "INSERT INTO USERS (USERNAME, PASSWORD, FULL_NAME, ROLE) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO ACCOUNTS (USERNAME, PASSWORD, FULL_NAME, ROLE) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
@@ -45,7 +46,7 @@ public class UserRepository {
     }
 
     public boolean updateUser(int id, String fullName, String role) {
-        String sql = "UPDATE USERS SET FULL_NAME = ?, ROLE = ? WHERE ID = ?";
+        String sql = "UPDATE ACCOUNTS SET FULL_NAME = ?, ROLE = ? WHERE ID = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, fullName);
@@ -58,18 +59,19 @@ public class UserRepository {
         return false;
     }
 
-    public List<User> getAllUsers() {
-        List<User> users = new ArrayList<>();
-        String sql = "SELECT * FROM USERS ORDER BY CREATED_AT DESC";
+    public List<Account> getAllUsers() {
+        List<Account> users = new ArrayList<>();
+        String sql = "SELECT * FROM ACCOUNTS ORDER BY CREATED_AT DESC";
         try (Connection conn = DatabaseConnection.getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                users.add(new User(
+                users.add(new Account(
                         rs.getInt("ID"),
                         rs.getString("USERNAME"),
                         rs.getString("FULL_NAME"),
-                        rs.getString("ROLE")));
+                        rs.getString("ROLE"),
+                        rs.getString("PHONE_NUMBER")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -78,7 +80,7 @@ public class UserRepository {
     }
 
     public boolean verifyPassword(int userId, String password) {
-        String sql = "SELECT 1 FROM USERS WHERE ID = ? AND PASSWORD = ?";
+        String sql = "SELECT 1 FROM ACCOUNTS WHERE ID = ? AND PASSWORD = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
@@ -93,7 +95,7 @@ public class UserRepository {
     }
 
     public boolean updatePassword(int userId, String newPassword) {
-        String sql = "UPDATE USERS SET PASSWORD = ? WHERE ID = ?";
+        String sql = "UPDATE ACCOUNTS SET PASSWORD = ? WHERE ID = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, newPassword);

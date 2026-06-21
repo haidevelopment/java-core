@@ -8,3 +8,6 @@ target/
 .project
 .settings/
 .DS_Store
+
+e-ticket-website/node_modules/
+sources.txt

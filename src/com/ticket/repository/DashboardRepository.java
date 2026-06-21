@@ -11,12 +11,12 @@ public class DashboardRepository {
 
     public int getTotalBookings(int userId, String role) {
         String sql = "SELECT COUNT(*) FROM BOOKINGS";
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            sql += " WHERE USER_ID = ?";
+        if (!"ADMIN".equals(role)) {
+            sql += " WHERE CREATED_BY = ?";
         }
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            if (!"ADMIN".equalsIgnoreCase(role)) {
+            if (!"ADMIN".equals(role)) {
                 pstmt.setInt(1, userId);
             }
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -30,12 +30,12 @@ public class DashboardRepository {
 
     public double getTotalRevenue(int userId, String role) {
         String sql = "SELECT SUM(TOTAL_AMOUNT) FROM BOOKINGS WHERE STATUS = 'CONFIRMED'";
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            sql += " AND USER_ID = ?";
+        if (!"ADMIN".equals(role)) {
+            sql += " AND CREATED_BY = ?";
         }
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            if (!"ADMIN".equalsIgnoreCase(role)) {
+            if (!"ADMIN".equals(role)) {
                 pstmt.setInt(1, userId);
             }
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -50,14 +50,14 @@ public class DashboardRepository {
     public Map<String, Integer> getBookingStatsByStatus(int userId, String role) {
         Map<String, Integer> stats = new HashMap<>();
         String sql = "SELECT STATUS, COUNT(*) FROM BOOKINGS";
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            sql += " WHERE USER_ID = ?";
+        if (!"ADMIN".equals(role)) {
+            sql += " WHERE CREATED_BY = ?";
         }
         sql += " GROUP BY STATUS";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            if (!"ADMIN".equalsIgnoreCase(role)) {
+            if (!"ADMIN".equals(role)) {
                 pstmt.setInt(1, userId);
             }
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -73,13 +73,14 @@ public class DashboardRepository {
 
     public List<Booking> getRecentBookings(int userId, String role, int limit) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD " +
+        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, u.PHONE_NUMBER, cr.FULL_NAME as CREATED_BY_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD " +
                      "FROM BOOKINGS b " +
-                     "JOIN USERS u ON b.USER_ID = u.ID " +
+                     "LEFT JOIN CUSTOMERS u ON b.CUSTOMER_ID = u.ID " +
+                     "LEFT JOIN ACCOUNTS cr ON b.CREATED_BY = cr.ID " +
                      "JOIN TRIPS t ON b.TRIP_ID = t.ID ";
         
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            sql += " WHERE b.USER_ID = ?";
+        if (!"ADMIN".equals(role)) {
+            sql += " WHERE b.CREATED_BY = ?";
         }
         
         sql += " ORDER BY b.BOOKING_DATE DESC FETCH FIRST ? ROWS ONLY";
@@ -87,7 +88,7 @@ public class DashboardRepository {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int paramIndex = 1;
-            if (!"ADMIN".equalsIgnoreCase(role)) {
+            if (!"ADMIN".equals(role)) {
                 pstmt.setInt(paramIndex++, userId);
             }
             pstmt.setInt(paramIndex, limit);
@@ -98,8 +99,11 @@ public class DashboardRepository {
                             rs.getInt("ID"),
                             rs.getString("BOOKING_CODE"),
                             rs.getString("FULL_NAME"),
+                            rs.getString("PHONE_NUMBER"),
+                            rs.getString("CREATED_BY_NAME"),
                             rs.getString("TRIP_NAME"),
                             rs.getTimestamp("BOOKING_DATE"),
+                            rs.getInt("TOTAL_SEATS"),
                             rs.getDouble("TOTAL_AMOUNT"),
                             rs.getString("STATUS"),
                             rs.getString("PAYMENT_METHOD")));
@@ -112,7 +116,7 @@ public class DashboardRepository {
     }
 
     public int getTotalUsers() {
-        String sql = "SELECT COUNT(*) FROM USERS";
+        String sql = "SELECT COUNT(*) FROM ACCOUNTS";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {

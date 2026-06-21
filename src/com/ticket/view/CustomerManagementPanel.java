@@ -1,20 +1,20 @@
 package com.ticket.view;
 
-import com.ticket.model.Account;
-import com.ticket.repository.UserRepository;
+import com.ticket.model.Customer;
+import com.ticket.repository.CustomerRepository;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class UserManagementPanel extends JPanel {
-    private UserRepository userRepo;
+public class CustomerManagementPanel extends JPanel {
+    private CustomerRepository customerRepo;
     private JTable table;
     private DefaultTableModel tableModel;
 
-    public UserManagementPanel() {
-        this.userRepo = new UserRepository();
+    public CustomerManagementPanel() {
+        this.customerRepo = new CustomerRepository();
         setLayout(new BorderLayout());
         setBackground(new Color(240, 242, 245));
         setBorder(new EmptyBorder(25, 30, 25, 30));
@@ -24,30 +24,28 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void initComponents() {
-        // 1. Header
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        JPanel headerPanel = new JPanel(new BorderLayout(0, 10));
         headerPanel.setOpaque(false);
         headerPanel.setBorder(new EmptyBorder(0, 10, 25, 10));
         
-        JLabel lblTitle = new JLabel("User Management");
+        JLabel lblTitle = new JLabel("Customer Management");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
         lblTitle.setForeground(new Color(52, 73, 94));
         
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         btnPanel.setOpaque(false);
-
-        JButton btnAdd = createStyledButton("Add User", new Color(46, 204, 113));
+        
+        JButton btnAdd = createStyledButton("Add Customer", new Color(46, 204, 113));
         JButton btnRefresh = createStyledButton("Refresh", new Color(52, 152, 219));
         
         btnPanel.add(btnAdd);
         btnPanel.add(btnRefresh);
         
-        headerPanel.add(lblTitle, BorderLayout.WEST);
-        headerPanel.add(btnPanel, BorderLayout.EAST);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(btnPanel, BorderLayout.SOUTH);
         add(headerPanel, BorderLayout.NORTH);
 
-        // 2. Table
-        String[] columns = {"ID", "Username", "Full Name", "Role"};
+        String[] columns = {"ID", "Full Name", "Phone Number", "Email", "Created At"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -56,13 +54,7 @@ public class UserManagementPanel extends JPanel {
         table = new JTable(tableModel);
         styleTable(table);
 
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) editUser();
-            }
-        });
-
-        btnAdd.addActionListener(e -> addNewUser());
+        btnAdd.addActionListener(e -> addNewCustomer());
         btnRefresh.addActionListener(e -> loadData());
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -86,50 +78,36 @@ public class UserManagementPanel extends JPanel {
         add(tableContainer, BorderLayout.CENTER);
     }
 
-    private void addNewUser() {
+    private void addNewCustomer() {
         Window owner = SwingUtilities.getWindowAncestor(this);
-        UserDialog dialog = new UserDialog((Frame)owner, "Add New User", null);
+        CustomerDialog dialog = new CustomerDialog((Frame)owner, "Add Customer", null);
         dialog.setVisible(true);
 
         if (dialog.isConfirmed()) {
-            if (userRepo.addUser(dialog.getUsername(), dialog.getPassword(), dialog.getFullName(), dialog.getRole())) {
+            int newId = customerRepo.addCustomer(
+                dialog.getFullName(),
+                dialog.getPhoneNumber(),
+                dialog.getEmail()
+            );
+            if (newId > 0) {
                 loadData();
-                JOptionPane.showMessageDialog(this, "User added successfully!");
+                JOptionPane.showMessageDialog(this, "Customer added successfully!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error adding customer. Phone number might already exist.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-
-    private void editUser() {
-        int row = table.getSelectedRow();
-        if (row == -1) return;
-
-        int id = (int) table.getValueAt(row, 0);
-        Account selected = userRepo.getAllUsers().stream().filter(u -> u.getId() == id).findFirst().orElse(null);
-
-        if (selected != null) {
-            Window owner = SwingUtilities.getWindowAncestor(this);
-            UserDialog dialog = new UserDialog((Frame)owner, "Edit User", selected);
-            dialog.setVisible(true);
-
-            if (dialog.isConfirmed()) {
-                if (userRepo.updateUser(selected.getId(), dialog.getFullName(), dialog.getRole())) {
-                    loadData();
-                    JOptionPane.showMessageDialog(this, "User updated successfully!");
-                }
-            }
-        }
-    }
-
 
     public void loadData() {
         tableModel.setRowCount(0);
-        List<Account> users = userRepo.getAllUsers();
-        for (Account u : users) {
+        List<Customer> customers = customerRepo.getAllCustomers();
+        for (Customer c : customers) {
             tableModel.addRow(new Object[]{
-                u.getId(),
-                u.getUsername(),
-                u.getFullName(),
-                u.getRole()
+                c.getId(),
+                c.getFullName(),
+                c.getPhoneNumber(),
+                c.getEmail() != null ? c.getEmail() : "",
+                c.getCreatedAt() != null ? c.getCreatedAt().toString().substring(0, 16) : ""
             });
         }
         tableModel.fireTableDataChanged();

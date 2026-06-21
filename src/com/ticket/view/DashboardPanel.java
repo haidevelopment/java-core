@@ -1,7 +1,7 @@
 package com.ticket.view;
 
 import com.ticket.model.Booking;
-import com.ticket.model.User;
+import com.ticket.model.Account;
 import com.ticket.repository.DashboardRepository;
 
 import javax.swing.*;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DashboardPanel extends JPanel {
-    private User currentUser;
+    private Account currentUser;
     private DashboardRepository dashboardRepo;
     private final Color backgroundColor = new Color(240, 242, 245);
     private final Color primaryBlue = new Color(41, 128, 185);
@@ -25,8 +25,8 @@ public class DashboardPanel extends JPanel {
     private JPanel statsGrid;
     private DefaultTableModel tableModel;
 
-    public DashboardPanel(User user) {
-        this.currentUser = user;
+    public DashboardPanel(Account account) {
+        this.currentUser = account;
         this.dashboardRepo = new DashboardRepository();
         
         setLayout(new BorderLayout());
