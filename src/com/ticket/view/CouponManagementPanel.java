@@ -4,8 +4,10 @@ import com.ticket.model.Coupon;
 import com.ticket.repository.CouponRepository;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -16,71 +18,241 @@ public class CouponManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTable table;
 
-    private JTextField txtCode, txtPercent, txtAmount, txtDate;
+    private JTextField txtCode, txtPercent, txtAmount, txtDate, txtKeyword;
     private JCheckBox chkActive;
+    private JComboBox<String> cbActiveFilter;
+    private JLabel lblStats;
+    private List<Coupon> allCouponsCache;
 
     public CouponManagementPanel() {
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(new Color(245, 247, 250));
+        setBorder(new EmptyBorder(28, 32, 28, 32));
 
-        // Tiêu đề
-        JLabel title = new JLabel("Coupon Management", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        add(title, BorderLayout.NORTH);
+        initComponents();
+        loadData();
+    }
 
-        // Bảng dữ liệu
+    private void initComponents() {
+        JPanel mainContent = new JPanel();
+        mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
+        mainContent.setBackground(new Color(245, 247, 250));
+
+        // ── Header ──
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 247, 250));
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
+
+        JLabel title = new JLabel("Coupon Management");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        title.setForeground(new Color(15, 23, 42));
+        headerPanel.add(title, BorderLayout.WEST);
+        mainContent.add(headerPanel);
+        mainContent.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // ── Filter Bar ──
+        mainContent.add(createFilterBar());
+        mainContent.add(Box.createRigidArea(new Dimension(0, 16)));
+
+        // ── Table ──
         String[] columns = {"ID", "Code", "Discount %", "Discount Amount", "Expiry Date", "Active"};
         tableModel = new DefaultTableModel(columns, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(tableModel);
-        table.setRowHeight(30);
+        styleTable(table);
         table.getSelectionModel().addListSelectionListener(e -> fillForm());
-        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // Form nhập
+        JScrollPane tableScroll = new JScrollPane(table);
+        tableScroll.setBorder(BorderFactory.createEmptyBorder());
+        tableScroll.getViewport().setBackground(Color.WHITE);
+
+        JPanel tableContainer = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 18, 18));
+                g2.dispose();
+            }
+        };
+        tableContainer.setOpaque(false);
+        tableContainer.setBorder(new EmptyBorder(15, 15, 15, 15));
+        tableContainer.add(tableScroll, BorderLayout.CENTER);
+        mainContent.add(tableContainer);
+        mainContent.add(Box.createRigidArea(new Dimension(0, 16)));
+
+        // ── Form ──
+        mainContent.add(createFormPanel());
+
+        JScrollPane outerScroll = new JScrollPane(mainContent);
+        outerScroll.setBorder(null);
+        outerScroll.getVerticalScrollBar().setUnitIncrement(16);
+        outerScroll.setBackground(new Color(245, 247, 250));
+        outerScroll.getViewport().setBackground(new Color(245, 247, 250));
+        add(outerScroll, BorderLayout.CENTER);
+    }
+
+    private JPanel createFilterBar() {
+        JPanel bar = new JPanel(new BorderLayout(16, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 14, 14));
+                g2.setColor(new Color(0, 0, 0, 8));
+                g2.draw(new RoundRectangle2D.Double(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
+                g2.dispose();
+            }
+        };
+        bar.setOpaque(false);
+        bar.setBorder(new EmptyBorder(16, 20, 16, 20));
+        bar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+
+        JPanel filterGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        filterGroup.setOpaque(false);
+
+        JLabel lblKw = new JLabel("🔍");
+        lblKw.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        filterGroup.add(lblKw);
+
+        txtKeyword = new JTextField(14);
+        txtKeyword.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        txtKeyword.setPreferredSize(new Dimension(160, 36));
+        txtKeyword.putClientProperty("JTextField.placeholderText", "Mã coupon...");
+        filterGroup.add(txtKeyword);
+
+        filterGroup.add(new JLabel("TT:"));
+        cbActiveFilter = new JComboBox<>(new String[]{"[Tất cả]", "active", "inactive"});
+        cbActiveFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cbActiveFilter.setPreferredSize(new Dimension(120, 36));
+        cbActiveFilter.setBackground(Color.WHITE);
+        filterGroup.add(cbActiveFilter);
+
+        bar.add(filterGroup, BorderLayout.WEST);
+
+        JPanel actionGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionGroup.setOpaque(false);
+
+        lblStats = new JLabel("");
+        lblStats.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStats.setForeground(new Color(100, 116, 139));
+        actionGroup.add(lblStats);
+
+        JButton btnSearch = createSmallButton("Lọc", new Color(59, 130, 246));
+        btnSearch.addActionListener(e -> applyFilter());
+        JButton btnClear = createSmallButton("Xóa lọc", new Color(148, 163, 184));
+        btnClear.addActionListener(e -> clearFilter());
+
+        actionGroup.add(btnSearch);
+        actionGroup.add(btnClear);
+        bar.add(actionGroup, BorderLayout.EAST);
+
+        txtKeyword.addActionListener(e -> applyFilter());
+        return bar;
+    }
+
+    private JButton createSmallButton(String text, Color color) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bg = color;
+                if (getModel().isPressed()) bg = color.darker();
+                else if (getModel().isRollover()) bg = color.brighter();
+                g2.setColor(bg);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setPreferredSize(new Dimension(90, 36));
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private void applyFilter() {
+        String kw = txtKeyword.getText().trim();
+        String activeFilter = (String) cbActiveFilter.getSelectedItem();
+        List<Coupon> filtered = repo.searchCoupons(kw, activeFilter);
+        renderTable(filtered);
+        lblStats.setText(filtered.size() + " / " + (allCouponsCache != null ? allCouponsCache.size() : 0) + " coupons");
+    }
+
+    private void clearFilter() {
+        txtKeyword.setText("");
+        cbActiveFilter.setSelectedItem("[Tất cả]");
+        applyFilter();
+    }
+
+    // ═══════════════════════════════════════════
+    //  FORM
+    // ═══════════════════════════════════════════
+    private JPanel createFormPanel() {
+        JPanel card = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 18, 18));
+                g2.setColor(new Color(0, 0, 0, 8));
+                g2.draw(new RoundRectangle2D.Double(0, 0, getWidth() - 1, getHeight() - 1, 18, 18));
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(20, 24, 20, 24));
+
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Coupon Information"));
-        form.setBackground(Color.WHITE);
+        form.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        txtCode    = new JTextField(15);
+        txtCode = new JTextField(15);
         txtPercent = new JTextField(15);
-        txtAmount  = new JTextField(15);
-        txtDate    = new JTextField(15);
-        txtDate.setToolTipText("Format: dd/MM/yyyy");
-        chkActive  = new JCheckBox("Active", true);
+        txtAmount = new JTextField(15);
+        txtDate = new JTextField(15);
+        txtDate.setToolTipText("dd/MM/yyyy");
+        chkActive = new JCheckBox("Active", true);
+        chkActive.setOpaque(false);
 
-        String[] labels = {"Coupon Code:", "Discount %:", "Discount Amount:", "Expiry Date (dd/MM/yyyy):"};
+        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
+        txtCode.setFont(fieldFont);
+        txtPercent.setFont(fieldFont);
+        txtAmount.setFont(fieldFont);
+        txtDate.setFont(fieldFont);
+
+        String[] labels = {"Coupon Code:", "Discount %:", "Discount Amount:", "Expiry Date:"};
         JComponent[] fields = {txtCode, txtPercent, txtAmount, txtDate};
 
         for (int i = 0; i < labels.length; i++) {
             gbc.gridx = 0; gbc.gridy = i;
-            form.add(new JLabel(labels[i]), gbc);
+            JLabel lbl = new JLabel(labels[i]);
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            form.add(lbl, gbc);
             gbc.gridx = 1;
             form.add(fields[i], gbc);
         }
         gbc.gridx = 1; gbc.gridy = labels.length;
         form.add(chkActive, gbc);
 
-        // Nút bấm
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        btnPanel.setBackground(Color.WHITE);
+        btnPanel.setOpaque(false);
 
-        JButton btnAdd    = new JButton("➕ Add");
-        JButton btnUpdate = new JButton("✏️ Edit");
-        JButton btnDelete = new JButton("🗑️ Delete");
-        JButton btnClear  = new JButton("🔄 Refresh");
-
-        btnAdd.setBackground(new Color(40, 167, 69));
-        btnAdd.setForeground(Color.WHITE);
-        btnUpdate.setBackground(new Color(0, 123, 255));
-        btnUpdate.setForeground(Color.WHITE);
-        btnDelete.setBackground(new Color(220, 53, 69));
-        btnDelete.setForeground(Color.WHITE);
+        JButton btnAdd = createActionButton("➕ Add", new Color(34, 197, 94));
+        JButton btnUpdate = createActionButton("✏️ Edit", new Color(59, 130, 246));
+        JButton btnDelete = createActionButton("🗑️ Delete", new Color(239, 68, 68));
+        JButton btnClear = createActionButton("🔄 Clear", new Color(148, 163, 184));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
@@ -88,22 +260,55 @@ public class CouponManagementPanel extends JPanel {
         btnPanel.add(btnClear);
 
         JPanel south = new JPanel(new BorderLayout());
+        south.setOpaque(false);
         south.add(form, BorderLayout.CENTER);
         south.add(btnPanel, BorderLayout.SOUTH);
-        add(south, BorderLayout.SOUTH);
 
-        // Sự kiện
+        card.add(south, BorderLayout.CENTER);
+
         btnAdd.addActionListener(e -> addCoupon());
         btnUpdate.addActionListener(e -> updateCoupon());
         btnDelete.addActionListener(e -> deleteCoupon());
         btnClear.addActionListener(e -> clearForm());
 
-        loadData();
+        return card;
     }
 
+    private JButton createActionButton(String text, Color color) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bg = color;
+                if (getModel().isPressed()) bg = color.darker();
+                else if (getModel().isRollover()) bg = color.brighter();
+                g2.setColor(bg);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setPreferredSize(new Dimension(120, 36));
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    // ═══════════════════════════════════════════
+    //  DATA
+    // ═══════════════════════════════════════════
     private void loadData() {
+        allCouponsCache = repo.getAllCoupons();
+        applyFilter();
+    }
+
+    private void renderTable(List<Coupon> list) {
         tableModel.setRowCount(0);
-        List<Coupon> list = repo.getAllCoupons();
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         for (Coupon c : list) {
             tableModel.addRow(new Object[]{
@@ -129,7 +334,7 @@ public class CouponManagementPanel extends JPanel {
         String code = txtCode.getText().trim();
         if (code.isEmpty()) throw new Exception("Please enter coupon code!");
         double percent = txtPercent.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtPercent.getText().trim());
-        double amount  = txtAmount.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtAmount.getText().trim());
+        double amount = txtAmount.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtAmount.getText().trim());
         Date date = new SimpleDateFormat("dd/MM/yyyy").parse(txtDate.getText().trim());
         Coupon c = new Coupon(code, percent, amount, date);
         c.setActive(chkActive.isSelected());
@@ -163,7 +368,7 @@ public class CouponManagementPanel extends JPanel {
     private void deleteCoupon() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "Please select a coupon to delete!"); return; }
-        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete?", "Confirm", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure?", "Confirm", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             repo.deleteCoupon((int) tableModel.getValueAt(row, 0));
             JOptionPane.showMessageDialog(this, "Deleted successfully!");
@@ -176,5 +381,16 @@ public class CouponManagementPanel extends JPanel {
         txtAmount.setText(""); txtDate.setText("");
         chkActive.setSelected(true);
         table.clearSelection();
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(40);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        table.getTableHeader().setBackground(Color.WHITE);
+        table.getTableHeader().setPreferredSize(new Dimension(0, 40));
+        table.setShowVerticalLines(false);
+        table.setGridColor(new Color(240, 240, 240));
+        table.setSelectionBackground(new Color(235, 245, 251));
     }
 }

@@ -117,6 +117,74 @@ public class BookingRepository {
         return false;
     }
 
+    public List<Booking> searchBookings(String keyword, String status, String tripName) {
+        List<Booking> bookings = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT b.ID, b.BOOKING_CODE, " +
+                "c.FULL_NAME AS CUSTOMER_NAME, c.PHONE_NUMBER AS CUSTOMER_PHONE, " +
+                "cr.FULL_NAME AS CREATED_BY_NAME, " +
+                "t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD, b.COUPON_CODE " +
+                "FROM BOOKINGS b " +
+                "LEFT JOIN CUSTOMERS c ON b.CUSTOMER_ID = c.ID " +
+                "LEFT JOIN ACCOUNTS cr ON b.CREATED_BY = cr.ID " +
+                "JOIN TRIPS t ON b.TRIP_ID = t.ID WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" AND (UPPER(c.FULL_NAME) LIKE UPPER(?) OR UPPER(b.BOOKING_CODE) LIKE UPPER(?))");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+        }
+        if (status != null && !status.isBlank() && !"[Tất cả]".equals(status)) {
+            sql.append(" AND b.STATUS = ?");
+            params.add(status);
+        }
+        if (tripName != null && !tripName.isBlank() && !"[Tất cả]".equals(tripName)) {
+            sql.append(" AND t.TRIP_NAME = ?");
+            params.add(tripName);
+        }
+        sql.append(" ORDER BY b.BOOKING_DATE DESC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(new Booking(
+                            rs.getInt("ID"),
+                            rs.getString("BOOKING_CODE"),
+                            rs.getString("CUSTOMER_NAME"),
+                            rs.getString("CUSTOMER_PHONE"),
+                            rs.getString("CREATED_BY_NAME"),
+                            rs.getString("TRIP_NAME"),
+                            rs.getTimestamp("BOOKING_DATE"),
+                            rs.getInt("TOTAL_SEATS"),
+                            rs.getDouble("TOTAL_AMOUNT"),
+                            rs.getString("STATUS"),
+                            rs.getString("PAYMENT_METHOD"),
+                            rs.getString("COUPON_CODE")));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return bookings;
+    }
+
+    public List<String> getDistinctTripNames() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT TRIP_NAME FROM TRIPS ORDER BY TRIP_NAME";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) list.add(rs.getString(1));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public double getTotalRevenue() {
         String sql = "SELECT SUM(TOTAL_AMOUNT) FROM BOOKINGS WHERE STATUS = 'CONFIRMED'";
         try (Connection conn = DatabaseConnection.getConnection();

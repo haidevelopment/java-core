@@ -69,4 +69,37 @@ public class CustomerRepository {
         }
         return customers;
     }
+
+    public List<Customer> searchCustomers(String keyword) {
+        List<Customer> customers = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM CUSTOMERS WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" AND (UPPER(FULL_NAME) LIKE UPPER(?) OR UPPER(PHONE_NUMBER) LIKE UPPER(?) OR UPPER(EMAIL) LIKE UPPER(?))");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+        sql.append(" ORDER BY CREATED_AT DESC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    customers.add(new Customer(
+                            rs.getInt("ID"),
+                            rs.getString("FULL_NAME"),
+                            rs.getString("PHONE_NUMBER"),
+                            rs.getString("EMAIL"),
+                            rs.getTimestamp("CREATED_AT")));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return customers;
+    }
 }

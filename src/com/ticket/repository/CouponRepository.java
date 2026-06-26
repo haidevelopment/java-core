@@ -27,6 +27,43 @@ public class CouponRepository {
         return list;
     }
 
+    public List<Coupon> searchCoupons(String keyword, String activeFilter) {
+        List<Coupon> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM COUPONS WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" AND UPPER(CODE) LIKE UPPER(?)");
+            params.add("%" + keyword.trim() + "%");
+        }
+        if ("active".equals(activeFilter)) {
+            sql.append(" AND IS_ACTIVE = 1");
+        } else if ("inactive".equals(activeFilter)) {
+            sql.append(" AND IS_ACTIVE = 0");
+        }
+        sql.append(" ORDER BY ID");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Coupon c = new Coupon();
+                    c.setId(rs.getInt("ID"));
+                    c.setCode(rs.getString("CODE"));
+                    c.setDiscountPercent(rs.getDouble("DISCOUNT_PERCENT"));
+                    c.setDiscountAmount(rs.getDouble("DISCOUNT_AMOUNT"));
+                    c.setExpiredDate(rs.getDate("EXPIRED_DATE"));
+                    c.setActive(rs.getInt("IS_ACTIVE") == 1);
+                    list.add(c);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public void addCoupon(Coupon c) {
         String sql = "INSERT INTO COUPONS (CODE, DISCOUNT_PERCENT, DISCOUNT_AMOUNT, EXPIRED_DATE) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();

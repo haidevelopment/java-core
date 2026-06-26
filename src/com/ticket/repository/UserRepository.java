@@ -94,6 +94,42 @@ public class UserRepository {
         return false;
     }
 
+    public List<Account> searchUsers(String keyword, String role) {
+        List<Account> users = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM ACCOUNTS WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" AND (UPPER(USERNAME) LIKE UPPER(?) OR UPPER(FULL_NAME) LIKE UPPER(?))");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+        }
+        if (role != null && !role.isBlank() && !"[Tất cả]".equals(role)) {
+            sql.append(" AND ROLE = ?");
+            params.add(role);
+        }
+        sql.append(" ORDER BY CREATED_AT DESC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    users.add(new Account(
+                            rs.getInt("ID"),
+                            rs.getString("USERNAME"),
+                            rs.getString("FULL_NAME"),
+                            rs.getString("ROLE"),
+                            rs.getString("PHONE_NUMBER")));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return users;
+    }
+
     public boolean updatePassword(int userId, String newPassword) {
         String sql = "UPDATE ACCOUNTS SET PASSWORD = ? WHERE ID = ?";
         try (Connection conn = DatabaseConnection.getConnection();
