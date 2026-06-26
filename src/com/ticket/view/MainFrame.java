@@ -174,8 +174,6 @@ public class MainFrame extends JFrame {
         sidebar.add(btnCoupons);
         nextY += 55;
 
-        sidebar.add(createMenuButton("      Reports", nextY));
-        nextY += 55;
         btnSettings = createMenuButton("      Settings", nextY);
         menuButtons.add(btnSettings);
         sidebar.add(btnSettings);
