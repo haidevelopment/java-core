@@ -151,7 +151,8 @@ public class DatabaseConnection {
                     "TOTAL_SEATS NUMBER(3), " +
                     "TOTAL_AMOUNT NUMBER(10,2), " +
                     "STATUS VARCHAR2(20) DEFAULT 'PENDING' CHECK (STATUS IN ('PENDING', 'CONFIRMED', 'CANCELLED')), " +
-                    "PAYMENT_METHOD VARCHAR2(20))";
+                    "PAYMENT_METHOD VARCHAR2(20), " +
+                    "COUPON_CODE VARCHAR2(50))";
             executeCreateTable(stmt, "BOOKINGS", bookingsSQL);
 
 
@@ -171,7 +172,7 @@ public class DatabaseConnection {
                     "VALUE VARCHAR2(500))";
             executeCreateTable(stmt, "SETTINGS", settingsSQL);
 
-            // seedData(stmt);
+            seedData(stmt);
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {

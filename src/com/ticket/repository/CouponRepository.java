@@ -63,7 +63,7 @@ public class CouponRepository {
     }
 
     public Coupon findByCode(String code) {
-        String sql = "SELECT * FROM COUPONS WHERE CODE=? AND IS_ACTIVE=1";
+        String sql = "SELECT * FROM COUPONS WHERE CODE=? AND IS_ACTIVE=1 AND (EXPIRED_DATE IS NULL OR EXPIRED_DATE >= TRUNC(CURRENT_DATE))";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, code);

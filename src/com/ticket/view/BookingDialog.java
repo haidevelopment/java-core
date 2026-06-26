@@ -26,6 +26,7 @@ public class BookingDialog extends JDialog {
     private JTextField txtCoupon;
     private JLabel lblDiscount;
     private com.ticket.repository.CouponRepository couponRepo = new com.ticket.repository.CouponRepository();
+    private com.ticket.model.Coupon appliedCoupon = null;
     private com.ticket.repository.CustomerRepository customerRepo = new com.ticket.repository.CustomerRepository();
 
     private Customer selectedCustomer = null;
@@ -188,10 +189,13 @@ public class BookingDialog extends JDialog {
             }
             com.ticket.model.Coupon coupon = couponRepo.findByCode(code);
             if (coupon == null) {
+                appliedCoupon = null;
                 lblDiscount.setForeground(Color.RED);
                 lblDiscount.setText("❌ Invalid or expired coupon!");
+                updateAmount();
                 return;
             }
+            appliedCoupon = coupon;
             updateAmount();
         });
 
@@ -242,25 +246,21 @@ public class BookingDialog extends JDialog {
         if (selected != null) {
             int seats = (Integer) spinSeats.getValue();
             double amount = selected.getBasePrice() * seats;
-            
-            String code = txtCoupon.getText().trim();
-            if (!code.isEmpty()) {
-                com.ticket.model.Coupon coupon = couponRepo.findByCode(code);
-                if (coupon != null) {
-                    double discount = 0;
-                    if (coupon.getDiscountPercent() > 0) {
-                        discount = amount * coupon.getDiscountPercent() / 100;
-                    } else {
-                        discount = coupon.getDiscountAmount();
-                    }
-                    double newAmount = Math.max(0, amount - discount);
-                    txtAmount.setText(String.format("%.0f", newAmount));
-                    lblDiscount.setForeground(new Color(46, 204, 113));
-                    lblDiscount.setText("✅ Discount " + String.format("%,.0f VNĐ", discount) + " → Final: " + String.format("%,.0f VNĐ", newAmount));
-                    return;
+
+            if (appliedCoupon != null) {
+                double discount = 0;
+                if (appliedCoupon.getDiscountPercent() > 0) {
+                    discount = amount * appliedCoupon.getDiscountPercent() / 100;
+                } else {
+                    discount = appliedCoupon.getDiscountAmount();
                 }
+                double newAmount = Math.max(0, amount - discount);
+                txtAmount.setText(String.format("%.0f", newAmount));
+                lblDiscount.setForeground(new Color(46, 204, 113));
+                lblDiscount.setText("✅ Discount " + String.format("%,.0f VNĐ", discount) + " → Final: " + String.format("%,.0f VNĐ", newAmount));
+                return;
             }
-            
+
             txtAmount.setText(String.format("%.0f", amount));
             lblDiscount.setText("No coupon applied");
             lblDiscount.setForeground(Color.GRAY);
@@ -313,4 +313,5 @@ public class BookingDialog extends JDialog {
     public double getAmount() { return Double.parseDouble(txtAmount.getText()); }
     public String getStatus() { return (String) cbStatus.getSelectedItem(); }
     public String getPayment() { return (String) cbPayment.getSelectedItem(); }
+    public String getCouponCode() { return appliedCoupon != null ? appliedCoupon.getCode() : null; }
 }

@@ -14,10 +14,19 @@ public class Booking {
     private double totalAmount;
     private String status;
     private String paymentMethod;
+    private String couponCode;
 
     public Booking(int id, String bookingCode, String customerName, String customerPhone,
                    String createdByName, String tripName, Timestamp bookingDate,
                    int totalSeats, double totalAmount, String status, String paymentMethod) {
+        this(id, bookingCode, customerName, customerPhone, createdByName, tripName, bookingDate,
+             totalSeats, totalAmount, status, paymentMethod, null);
+    }
+
+    public Booking(int id, String bookingCode, String customerName, String customerPhone,
+                   String createdByName, String tripName, Timestamp bookingDate,
+                   int totalSeats, double totalAmount, String status, String paymentMethod,
+                   String couponCode) {
         this.id = id;
         this.bookingCode = bookingCode;
         this.customerName = customerName;
@@ -29,6 +38,7 @@ public class Booking {
         this.totalAmount = totalAmount;
         this.status = status;
         this.paymentMethod = paymentMethod;
+        this.couponCode = couponCode;
     }
 
     // Getters
@@ -43,4 +53,5 @@ public class Booking {
     public double getTotalAmount() { return totalAmount; }
     public String getStatus() { return status; }
     public String getPaymentMethod() { return paymentMethod; }
+    public String getCouponCode() { return couponCode; }
 }

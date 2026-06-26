@@ -111,13 +111,14 @@ public class BookingManagementPanel extends JPanel {
             Customer customer = dialog.getSelectedCustomer();
             if (customer != null) {
                 int newId = bookingRepo.addBookingReturnId(
-                        currentUser.getId(), 
+                        currentUser.getId(),
                         customer.getId(),
-                        dialog.getSelectedTrip().getId(), 
+                        dialog.getSelectedTrip().getId(),
                         dialog.getTotalSeats(),
-                        dialog.getAmount(), 
-                        dialog.getStatus(), 
-                        dialog.getPayment()
+                        dialog.getAmount(),
+                        dialog.getStatus(),
+                        dialog.getPayment(),
+                        dialog.getCouponCode()
                 );
                 if (newId > 0) {
                     com.ticket.model.Trip trip = dialog.getSelectedTrip();

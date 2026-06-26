@@ -9,10 +9,40 @@ import java.util.Map;
 
 public class DashboardRepository {
 
+    public static class TripStat {
+        public final String tripName;
+        public final int bookingCount;
+        public final double revenue;
+        public TripStat(String tripName, int bookingCount, double revenue) {
+            this.tripName = tripName;
+            this.bookingCount = bookingCount;
+            this.revenue = revenue;
+        }
+    }
+
     public int getTotalBookings(int userId, String role) {
         String sql = "SELECT COUNT(*) FROM BOOKINGS";
         if (!"ADMIN".equals(role)) {
             sql += " WHERE CREATED_BY = ?";
+        }
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (!"ADMIN".equals(role)) {
+                pstmt.setInt(1, userId);
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getTodayBookings(int userId, String role) {
+        String sql = "SELECT COUNT(*) FROM BOOKINGS WHERE TRUNC(BOOKING_DATE) = TRUNC(CURRENT_DATE)";
+        if (!"ADMIN".equals(role)) {
+            sql += " AND CREATED_BY = ?";
         }
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -47,6 +77,25 @@ public class DashboardRepository {
         return 0;
     }
 
+    public double getTodayRevenue(int userId, String role) {
+        String sql = "SELECT SUM(TOTAL_AMOUNT) FROM BOOKINGS WHERE STATUS = 'CONFIRMED' AND TRUNC(BOOKING_DATE) = TRUNC(CURRENT_DATE)";
+        if (!"ADMIN".equals(role)) {
+            sql += " AND CREATED_BY = ?";
+        }
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (!"ADMIN".equals(role)) {
+                pstmt.setInt(1, userId);
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public Map<String, Integer> getBookingStatsByStatus(int userId, String role) {
         Map<String, Integer> stats = new HashMap<>();
         String sql = "SELECT STATUS, COUNT(*) FROM BOOKINGS";
@@ -54,7 +103,7 @@ public class DashboardRepository {
             sql += " WHERE CREATED_BY = ?";
         }
         sql += " GROUP BY STATUS";
-        
+
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (!"ADMIN".equals(role)) {
@@ -71,18 +120,45 @@ public class DashboardRepository {
         return stats;
     }
 
+    public List<TripStat> getTopTrips(int userId, String role, int limit) {
+        List<TripStat> list = new ArrayList<>();
+        String sql = "SELECT t.TRIP_NAME, COUNT(*) AS cnt, SUM(b.TOTAL_AMOUNT) AS rev " +
+                     "FROM BOOKINGS b JOIN TRIPS t ON b.TRIP_ID = t.ID";
+        if (!"ADMIN".equals(role)) {
+            sql += " WHERE b.CREATED_BY = ?";
+        }
+        sql += " GROUP BY t.TRIP_NAME ORDER BY cnt DESC FETCH FIRST ? ROWS ONLY";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int idx = 1;
+            if (!"ADMIN".equals(role)) {
+                pstmt.setInt(idx++, userId);
+            }
+            pstmt.setInt(idx, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new TripStat(rs.getString("TRIP_NAME"), rs.getInt("cnt"), rs.getDouble("rev")));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public List<Booking> getRecentBookings(int userId, String role, int limit) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, u.PHONE_NUMBER, cr.FULL_NAME as CREATED_BY_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD " +
+        String sql = "SELECT b.ID, b.BOOKING_CODE, u.FULL_NAME, u.PHONE_NUMBER, cr.FULL_NAME as CREATED_BY_NAME, t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD, b.COUPON_CODE " +
                      "FROM BOOKINGS b " +
                      "LEFT JOIN CUSTOMERS u ON b.CUSTOMER_ID = u.ID " +
                      "LEFT JOIN ACCOUNTS cr ON b.CREATED_BY = cr.ID " +
                      "JOIN TRIPS t ON b.TRIP_ID = t.ID ";
-        
+
         if (!"ADMIN".equals(role)) {
             sql += " WHERE b.CREATED_BY = ?";
         }
-        
+
         sql += " ORDER BY b.BOOKING_DATE DESC FETCH FIRST ? ROWS ONLY";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -92,7 +168,7 @@ public class DashboardRepository {
                 pstmt.setInt(paramIndex++, userId);
             }
             pstmt.setInt(paramIndex, limit);
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     bookings.add(new Booking(
@@ -106,7 +182,8 @@ public class DashboardRepository {
                             rs.getInt("TOTAL_SEATS"),
                             rs.getDouble("TOTAL_AMOUNT"),
                             rs.getString("STATUS"),
-                            rs.getString("PAYMENT_METHOD")));
+                            rs.getString("PAYMENT_METHOD"),
+                            rs.getString("COUPON_CODE")));
                 }
             }
         } catch (SQLException e) {
@@ -133,6 +210,25 @@ public class DashboardRepository {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getPendingCount(int userId, String role) {
+        String sql = "SELECT COUNT(*) FROM BOOKINGS WHERE STATUS = 'PENDING'";
+        if (!"ADMIN".equals(role)) {
+            sql += " AND CREATED_BY = ?";
+        }
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (!"ADMIN".equals(role)) {
+                pstmt.setInt(1, userId);
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

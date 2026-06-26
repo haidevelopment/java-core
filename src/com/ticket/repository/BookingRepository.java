@@ -15,7 +15,7 @@ public class BookingRepository {
         String sql = "SELECT b.ID, b.BOOKING_CODE, " +
                 "c.FULL_NAME AS CUSTOMER_NAME, c.PHONE_NUMBER AS CUSTOMER_PHONE, " +
                 "cr.FULL_NAME AS CREATED_BY_NAME, " +
-                "t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD " +
+                "t.TRIP_NAME, b.BOOKING_DATE, b.TOTAL_SEATS, b.TOTAL_AMOUNT, b.STATUS, b.PAYMENT_METHOD, b.COUPON_CODE " +
                 "FROM BOOKINGS b " +
                 "LEFT JOIN CUSTOMERS c ON b.CUSTOMER_ID = c.ID " +
                 "LEFT JOIN ACCOUNTS cr ON b.CREATED_BY = cr.ID " +
@@ -38,7 +38,8 @@ public class BookingRepository {
                         rs.getInt("TOTAL_SEATS"),
                         rs.getDouble("TOTAL_AMOUNT"),
                         rs.getString("STATUS"),
-                        rs.getString("PAYMENT_METHOD")));
+                        rs.getString("PAYMENT_METHOD"),
+                        rs.getString("COUPON_CODE")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -50,9 +51,10 @@ public class BookingRepository {
      * Thêm booking mới, trả về ID vừa được sinh ra (để gen booking code).
      */
     public int addBookingReturnId(int createdById, int customerId, int tripId,
-                                  int totalSeats, double amount, String status, String payment) {
-        String sql = "INSERT INTO BOOKINGS (BOOKING_CODE, CREATED_BY, CUSTOMER_ID, TRIP_ID, TOTAL_SEATS, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                                  int totalSeats, double amount, String status, String payment,
+                                  String couponCode) {
+        String sql = "INSERT INTO BOOKINGS (BOOKING_CODE, CREATED_BY, CUSTOMER_ID, TRIP_ID, TOTAL_SEATS, TOTAL_AMOUNT, STATUS, PAYMENT_METHOD, COUPON_CODE) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String tempCode = "BK-TMP-" + System.currentTimeMillis();
         
         try (Connection conn = DatabaseConnection.getConnection();
@@ -65,6 +67,7 @@ public class BookingRepository {
             pstmt.setDouble(6, amount);
             pstmt.setString(7, status);
             pstmt.setString(8, payment);
+            pstmt.setString(9, couponCode != null && !couponCode.isEmpty() ? couponCode : null);
             pstmt.executeUpdate();
             
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
