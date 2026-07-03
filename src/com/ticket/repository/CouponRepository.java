@@ -14,14 +14,7 @@ public class CouponRepository {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Coupon c = new Coupon();
-                c.setId(rs.getInt("ID"));
-                c.setCode(rs.getString("CODE"));
-                c.setDiscountPercent(rs.getDouble("DISCOUNT_PERCENT"));
-                c.setDiscountAmount(rs.getDouble("DISCOUNT_AMOUNT"));
-                c.setExpiredDate(rs.getDate("EXPIRED_DATE"));
-                c.setActive(rs.getInt("IS_ACTIVE") == 1);
-                list.add(c);
+                list.add(mapCoupon(rs));
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
@@ -50,14 +43,7 @@ public class CouponRepository {
             }
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Coupon c = new Coupon();
-                    c.setId(rs.getInt("ID"));
-                    c.setCode(rs.getString("CODE"));
-                    c.setDiscountPercent(rs.getDouble("DISCOUNT_PERCENT"));
-                    c.setDiscountAmount(rs.getDouble("DISCOUNT_AMOUNT"));
-                    c.setExpiredDate(rs.getDate("EXPIRED_DATE"));
-                    c.setActive(rs.getInt("IS_ACTIVE") == 1);
-                    list.add(c);
+                    list.add(mapCoupon(rs));
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
@@ -69,8 +55,8 @@ public class CouponRepository {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.getCode());
-            ps.setDouble(2, c.getDiscountPercent());
-            ps.setDouble(3, c.getDiscountAmount());
+            setNullableDouble(ps, 2, c.getDiscountPercent());
+            setNullableDouble(ps, 3, c.getDiscountAmount());
             ps.setDate(4, new java.sql.Date(c.getExpiredDate().getTime()));
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
@@ -81,8 +67,8 @@ public class CouponRepository {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.getCode());
-            ps.setDouble(2, c.getDiscountPercent());
-            ps.setDouble(3, c.getDiscountAmount());
+            setNullableDouble(ps, 2, c.getDiscountPercent());
+            setNullableDouble(ps, 3, c.getDiscountAmount());
             ps.setDate(4, new java.sql.Date(c.getExpiredDate().getTime()));
             ps.setInt(5, c.isActive() ? 1 : 0);
             ps.setInt(6, c.getId());
@@ -106,16 +92,30 @@ public class CouponRepository {
             ps.setString(1, code);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                Coupon c = new Coupon();
-                c.setId(rs.getInt("ID"));
-                c.setCode(rs.getString("CODE"));
-                c.setDiscountPercent(rs.getDouble("DISCOUNT_PERCENT"));
-                c.setDiscountAmount(rs.getDouble("DISCOUNT_AMOUNT"));
-                c.setExpiredDate(rs.getDate("EXPIRED_DATE"));
-                c.setActive(true);
-                return c;
+                return mapCoupon(rs);
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
+    }
+
+    private Coupon mapCoupon(ResultSet rs) throws SQLException {
+        Coupon c = new Coupon();
+        c.setId(rs.getInt("ID"));
+        c.setCode(rs.getString("CODE"));
+        double pct = rs.getDouble("DISCOUNT_PERCENT");
+        c.setDiscountPercent(rs.wasNull() ? null : pct);
+        double amt = rs.getDouble("DISCOUNT_AMOUNT");
+        c.setDiscountAmount(rs.wasNull() ? null : amt);
+        c.setExpiredDate(rs.getDate("EXPIRED_DATE"));
+        c.setActive(rs.getInt("IS_ACTIVE") == 1);
+        return c;
+    }
+
+    private void setNullableDouble(PreparedStatement ps, int idx, Double value) throws SQLException {
+        if (value == null) {
+            ps.setNull(idx, java.sql.Types.DOUBLE);
+        } else {
+            ps.setDouble(idx, value);
+        }
     }
 }

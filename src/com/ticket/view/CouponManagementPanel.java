@@ -313,7 +313,8 @@ public class CouponManagementPanel extends JPanel {
         for (Coupon c : list) {
             tableModel.addRow(new Object[]{
                     c.getId(), c.getCode(),
-                    c.getDiscountPercent(), c.getDiscountAmount(),
+                    c.getDiscountPercent() != null ? c.getDiscountPercent().toString() : "",
+                    c.getDiscountAmount() != null ? c.getDiscountAmount().toString() : "",
                     c.getExpiredDate() != null ? sdf.format(c.getExpiredDate()) : "",
                     c.isActive() ? "✅" : "❌"
             });
@@ -324,17 +325,38 @@ public class CouponManagementPanel extends JPanel {
         int row = table.getSelectedRow();
         if (row < 0) return;
         txtCode.setText(tableModel.getValueAt(row, 1).toString());
-        txtPercent.setText(tableModel.getValueAt(row, 2).toString());
-        txtAmount.setText(tableModel.getValueAt(row, 3).toString());
-        txtDate.setText(tableModel.getValueAt(row, 4).toString());
+        txtPercent.setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
+        txtAmount.setText(tableModel.getValueAt(row, 3) != null ? tableModel.getValueAt(row, 3).toString() : "");
+        txtDate.setText(tableModel.getValueAt(row, 4) != null ? tableModel.getValueAt(row, 4).toString() : "");
         chkActive.setSelected(tableModel.getValueAt(row, 5).equals("✅"));
     }
 
     private Coupon buildCoupon() throws Exception {
         String code = txtCode.getText().trim();
         if (code.isEmpty()) throw new Exception("Please enter coupon code!");
-        double percent = txtPercent.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtPercent.getText().trim());
-        double amount = txtAmount.getText().trim().isEmpty() ? 0 : Double.parseDouble(txtAmount.getText().trim());
+
+        String pctText = txtPercent.getText().trim();
+        String amtText = txtAmount.getText().trim();
+
+        if (pctText.isEmpty() && amtText.isEmpty())
+            throw new Exception("Phai nhap Discount % hoac Discount Amount!");
+        if (!pctText.isEmpty() && !amtText.isEmpty())
+            throw new Exception("Chi duoc nhap 1 trong 2: Discount % hoac Discount Amount!");
+
+        Double percent = null;
+        Double amount = null;
+
+        if (!pctText.isEmpty()) {
+            percent = Double.parseDouble(pctText);
+            if (percent < 1 || percent > 100)
+                throw new Exception("Discount % phai trong khoang 1 den 100!");
+        }
+        if (!amtText.isEmpty()) {
+            amount = Double.parseDouble(amtText);
+            if (amount <= 0)
+                throw new Exception("Discount Amount phai lon hon 0!");
+        }
+
         Date date = new SimpleDateFormat("dd/MM/yyyy").parse(txtDate.getText().trim());
         Coupon c = new Coupon(code, percent, amount, date);
         c.setActive(chkActive.isSelected());

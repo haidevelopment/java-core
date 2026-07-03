@@ -249,9 +249,9 @@ public class BookingDialog extends JDialog {
 
             if (appliedCoupon != null) {
                 double discount = 0;
-                if (appliedCoupon.getDiscountPercent() > 0) {
+                if (appliedCoupon.getDiscountPercent() != null) {
                     discount = amount * appliedCoupon.getDiscountPercent() / 100;
-                } else {
+                } else if (appliedCoupon.getDiscountAmount() != null) {
                     discount = appliedCoupon.getDiscountAmount();
                 }
                 double newAmount = Math.max(0, amount - discount);

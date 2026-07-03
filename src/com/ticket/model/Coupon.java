@@ -5,14 +5,14 @@ import java.util.Date;
 public class Coupon {
     private int id;
     private String code;
-    private double discountPercent;
-    private double discountAmount;
+    private Double discountPercent;  // nullable: 1-100 hoac null
+    private Double discountAmount;   // nullable: >0 hoac null
     private Date expiredDate;
     private boolean isActive;
 
     public Coupon() {}
 
-    public Coupon(String code, double discountPercent, double discountAmount, Date expiredDate) {
+    public Coupon(String code, Double discountPercent, Double discountAmount, Date expiredDate) {
         this.code = code;
         this.discountPercent = discountPercent;
         this.discountAmount = discountAmount;
@@ -24,10 +24,10 @@ public class Coupon {
     public void setId(int id) { this.id = id; }
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
-    public double getDiscountPercent() { return discountPercent; }
-    public void setDiscountPercent(double d) { this.discountPercent = d; }
-    public double getDiscountAmount() { return discountAmount; }
-    public void setDiscountAmount(double d) { this.discountAmount = d; }
+    public Double getDiscountPercent() { return discountPercent; }
+    public void setDiscountPercent(Double d) { this.discountPercent = d; }
+    public Double getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(Double d) { this.discountAmount = d; }
     public Date getExpiredDate() { return expiredDate; }
     public void setExpiredDate(Date expiredDate) { this.expiredDate = expiredDate; }
     public boolean isActive() { return isActive; }
