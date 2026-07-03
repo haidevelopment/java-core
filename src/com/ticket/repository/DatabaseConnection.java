@@ -389,6 +389,8 @@ public class DatabaseConnection {
     }
 
     public static void main(String[] args) {
+        // Tạm thời bật cờ xóa bảng cũ và seed lại toàn bộ
+        System.setProperty("db.recreate", "true");
         initDatabase();
     }
 }
